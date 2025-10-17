@@ -1,0 +1,9 @@
+numpy
+sounddevice
+opencv-python
+deepface
+requests
+transformers
+torch
+accelerate
+safetensors

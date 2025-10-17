@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cv_mindcare"
+version = "0.1.0"
+description = "Computer Vision mental-health assistant — sensor sampling + local LLM guidance"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*"]
