@@ -1,62 +1,157 @@
-CV Mindcare — Computer Vision Mental Health Assistant
+# CV Mindcare
 
-Project layout (created by refactor):
+CV Mindcare is a privacy-first local utility that observes a few environmental signals (sound level, presence of greenery via camera, and brief facial affect sampling) and provides human-readable observations, trend analysis, and practical suggestions to improve wellbeing in a workspace or room.
 
-cv_mindcare/
-  __init__.py
-  # CV Mindcare
+This repository now includes a lightweight local database and a context-aware assistant that uses historical data to provide personalized recommendations.
 
-  CV Mindcare is a small toolkit that inspects local environmental signals (sound level, presence of greenery in a camera view, and brief facial affect sampling) and provides human-readable observations and practical suggestions to improve a room or workspace. The project is intended as a privacy-respecting local utility for personal wellbeing and workspace optimization.
+## Architecture
 
-  This repository contains sensor wrappers, a small summary engine, and a command-line interface to run quick environment checks.
+The data flow has been upgraded from a simple pipeline to a context-rich loop that supports long-term personalization:
 
-  Project structure
+1. Real-time Sensing
+   - The application captures live data: dominant emotion (from face analysis), ambient noise (dB), and greenery percentage from the camera view.
 
-  - `cv_mindcare/` — main package
-    - `cli/` — command-line entrypoint and interactive loop
-    - `sensors/` — sensor wrappers (noise, camera-based greenery detection, simple emotion sampling)
-    - `core/` — summarization and advice logic
-    - `llm/` — optional helper for local text generation (kept in the tree but not required)
+2. Database Logging
+   - Each live reading is immediately logged to an on-disk SQLite database (`mindcare.db`) as a historical record.
 
-  Quick start (no hardware required)
+3. Historical Analysis
+   - The system queries recent sessions and computes trends and statistics (most frequent emotions, noisy times of day, correlations between greenery and mood).
 
-  1. Create and activate a virtual environment (recommended):
+4. Context Creation
+   - A combined JSON payload is created that merges the `current_readings` with a `historical_summary` describing detected trends.
 
-  ```powershell
-  python -m venv .venv
-  .\.venv\Scripts\Activate.ps1
-  ```
+5. Context-Aware Inference
+   - The rich payload is passed to the local assistant, which compares the current reading to historical patterns and returns both immediate advice and longer-term recommendations.
 
-  2. Install runtime dependencies (optional for mock mode):
+This loop allows the assistant to become more personalized and useful over time as more sessions are logged.
 
-  ```powershell
-  pip install -r requirements.txt
-  ```
+## Project structure
 
-  3. Run the CLI with mock data (fast, no camera or microphone needed):
+- `cv_mindcare/` — main package
+  - `cli/` — command-line entrypoint and interactive loop
+  - `sensors/` — sensor wrappers (noise, camera-based greenery detection, simple emotion sampling)
+  - `core/` — summarization and advice logic
+  - `llm/` — helper functions for contextual prompts and model calls
 
-  ```powershell
-  python -m cv_mindcare.cli.main --mock
-  ```
+## Quick start (no hardware required)
 
-  Real sensor runs
+1. Create and activate a virtual environment (recommended):
 
-  - Noise sampling uses the local microphone (requires `sounddevice`)
-  - Greenery detection uses the webcam (requires `opencv-python`)
-  - Emotion sampling is optional and relies on `deepface` + webcam
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
 
-  If a dependency or hardware resource is missing, the sensors return a clear `available: False` result and the CLI will still provide fallback suggestions.
+2. Install runtime dependencies (optional for mock mode):
 
-  Developer notes
+```powershell
+pip install -r requirements.txt
+```
 
-  - Tests: `tests/` contains a basic test for the summarization logic. Use `pytest` to run tests.
-  - CI: A GitHub Actions workflow runs the test suite on push/PRs to `main`.
-  - Packaging: `pyproject.toml` / `setup.cfg` are included for easy packaging.
+3. Run the CLI with mock data (fast, no camera or microphone needed):
 
-  Contributing
+```powershell
+python -m cv_mindcare.cli.main --mock
+```
 
-  If you'd like to contribute, please open an issue or submit a pull request with small, focused changes. For sensor code changes, include a note about how you tested it (mocked inputs are fine).
+## Real sensor runs
 
-  License
+- Noise sampling uses the local microphone (requires `sounddevice`)
+- Greenery detection uses the webcam (requires `opencv-python`)
+- Emotion sampling is optional and relies on `deepface` + webcam
 
-  This project is released under the MIT License. See the `LICENSE` file for details.
+If a dependency or hardware resource is missing, the sensors return a clear `available: False` result and the CLI will still provide fallback suggestions.
+
+## Technology stack
+
+- Python 3.9+
+- sqlite3 (built-in) — stores `mindcare.db`
+- pandas — analyzes historical data and prepares statistics
+- numpy — numeric operations used by sensors
+- sounddevice — microphone capture (optional)
+- opencv-python — camera capture and simple image processing (optional)
+- deepface — optional facial affect detection (optional)
+- requests — HTTP client (used by local model wrappers if present)
+
+## Setup & Usage
+
+1) Create and activate a virtual environment (recommended):
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+2) Install dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+3) Initialize the database
+
+The database (`mindcare.db`) will be created automatically the first time the application runs or when `database_manager.log_session_data()` is called. To explicitly initialize the database, run the CLI once (mock mode is fine):
+
+```powershell
+python -m cv_mindcare.cli.main --mock
+```
+
+This creates `mindcare.db` in the repository root and ensures the sessions table exists.
+
+4) Run the assistant
+
+- Quick test (no hardware):
+
+```powershell
+python -m cv_mindcare.cli.main --mock
+```
+
+- Real sensor run (requires microphone/webcam and optional model):
+
+```powershell
+python -m cv_mindcare.cli.main
+```
+
+The assistant is no longer stateless — it remembers past sessions and will provide personalized insights that improve with continued use.
+
+## Key modules
+
+- `cv_mindcare/sensors/` — wrappers for noise, camera-based greenery detection, and (optional) emotion sampling.
+- `cv_mindcare/core/summary.py` — summarization and fallback advice logic for single sessions.
+- `cv_mindcare/database_manager.py` — historical logging & analysis (new).
+  - Responsibilities:
+    - Creates and manages the `mindcare.db` SQLite database.
+    - `log_session_data()` — saves a session entry (dominant emotion, counts, avg_db, classification, avg_green_pct).
+    - `get_session_history(days=7)` — returns a pandas DataFrame with recent history.
+    - `analyze_and_rank_trends(df)` — computes trends used to build AI context.
+- `cv_mindcare/llm/ollama.py` — LLM helper functions and `create_context_for_ai()` to synthesize current readings + historical_summary.
+
+## Context payload schema
+
+When preparing context for the assistant, the application creates a two-part JSON object and passes it to the model. Example:
+
+```json
+{
+  "current_readings": {
+    "dominant_emotion": "sad",
+    "avg_db": 65.5,
+    "noise_classification": "Stress Zone",
+    "avg_green_pct": 4.1
+  },
+  "historical_summary": {
+    "most_frequent_emotion": "neutral",
+    "noisiest_time_of_day": "afternoon",
+    "insight": "Higher greenery levels correlate with more frequent 'happy' emotions in your history."
+  }
+}
+```
+
+The assistant's system prompt instructs it to first provide immediate, actionable advice based on `current_readings`, then to compare the current state to the historical trends and offer personalized, longer-term suggestions.
+
+## Contributing
+
+If you'd like to contribute, please open an issue or submit a pull request. For sensor changes, include notes on how you tested with mocked inputs or sample recordings/frames.
+
+## License
+
+MIT — see the `LICENSE` file for details.
