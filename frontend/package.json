@@ -1,0 +1,25 @@
+{
+  "name": "cv-mindcare-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "lucide-react": "^0.260.0",
+    "framer-motion": "^10.12.15",
+    "recharts": "^2.3.2",
+    "@headlessui/react": "^1.8.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "tailwindcss": "^3.5.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "@vitejs/plugin-react": "^4.0.0"
+  }
+}
