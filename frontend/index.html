@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CV Mindcare Dashboard</title>
+    <!-- Tailwind Play CDN for quick prototyping -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: 'class' }
+    </script>
+    <style>
+      body { font-family: Inter, ui-sans-serif, system-ui; }
+    </style>
+  </head>
+  <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div id="root" class="min-h-screen p-6"></div>
+
+    <script type="module">
+      const root = document.getElementById('root');
+
+      async function fetchLive() {
+        try {
+          const res = await fetch('/api/live');
+          if (!res.ok) throw new Error('failed');
+          return await res.json();
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function Card({title, body}){
+        const el = document.createElement('div');
+        el.className = 'bg-white dark:bg-gray-800 shadow rounded-lg p-4 w-full';
+        const h = document.createElement('h3'); h.className='font-semibold'; h.textContent = title;
+        const b = document.createElement('div'); b.className='mt-2 text-sm'; b.innerHTML = body;
+        el.appendChild(h); el.appendChild(b); return el;
+      }
+
+      async function render(){
+        root.innerHTML = '';
+        const header = document.createElement('div'); header.className='flex items-center justify-between mb-6';
+        const title = document.createElement('h1'); title.className='text-2xl font-bold'; title.textContent='CV Mindcare — Dashboard';
+        header.appendChild(title);
+        root.appendChild(header);
+
+        const grid = document.createElement('div'); grid.className='grid grid-cols-1 md:grid-cols-3 gap-4';
+        const live = await fetchLive();
+
+        grid.appendChild(Card({title:'Emotion', body:`<div class="text-xl">${live?.dominant_emotion ?? 'neutral'}</div>`}));
+        grid.appendChild(Card({title:'Noise (dB)', body:`<div class="text-xl">${live?.avg_db ?? 'N/A'}</div><div class="h-2 bg-gray-200 rounded mt-2"><div style="width:${Math.min(100, (live?.avg_db??50))}%" class="h-2 bg-green-400 rounded"></div></div>`}));
+        grid.appendChild(Card({title:'Greenery', body:`<div class="text-xl">${live?.avg_green_pct ?? 'N/A'}%</div>`}));
+
+        const summaryCard = Card({title:'Suggestions', body:`<div>Keep this area tidy and add a plant in view for better wellbeing.</div>`});
+        summaryCard.classList.add('md:col-span-3');
+
+        root.appendChild(grid);
+        root.appendChild(document.createElement('div')).className='h-6';
+        root.appendChild(summaryCard);
+      }
+
+      render();
+      setInterval(render, 5000);
+    </script>
+  </body>
+  </html>

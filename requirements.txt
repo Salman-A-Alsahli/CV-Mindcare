@@ -8,3 +8,5 @@ torch
 accelerate
 safetensors
 pandas
+fastapi
+uvicorn[standard]
