@@ -1,12 +1,20 @@
 from typing import Any, Dict
 import json
 import asyncio
+import random
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 app = FastAPI(title="CV Mindcare Backend")
+
+# Sampler runtime state is stored on app.state
+app.state.sampler_running = False
+app.state.sampler_task = None
+app.state.sampler_stop_event = None
+app.state.last_sample = None
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = ROOT / "frontend"
@@ -143,3 +151,140 @@ async def index():
 # Mount static (allow serving CSS/JS if present)
 if FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+
+
+    @app.get("/api/start")
+    async def start_collection():
+        # If already running, return current state
+        if app.state.__dict__.get("sampler_running"):
+            return JSONResponse({"status": "already_running"})
+
+        # Prepare cancellation event and create task
+        stop_event = asyncio.Event()
+        app.state.sampler_stop_event = stop_event
+        app.state.sampler_running = True
+        app.state.last_sample = None
+        # Start background sampler task
+        app.state.sampler_task = asyncio.create_task(_sampler_loop(stop_event))
+        return JSONResponse({"status": "started"})
+
+
+    @app.get("/api/stop")
+    async def stop_collection():
+        # Signal the sampler to stop and wait briefly
+        ev = getattr(app.state, "sampler_stop_event", None)
+        task = getattr(app.state, "sampler_task", None)
+        app.state.sampler_running = False
+        if ev is not None:
+            ev.set()
+        if task is not None:
+            try:
+                await asyncio.wait_for(task, timeout=3.0)
+            except Exception:
+                try:
+                    task.cancel()
+                except Exception:
+                    pass
+        return JSONResponse({"status": "stopped"})
+
+
+    @app.get("/api/status")
+    async def sampler_status():
+        running = bool(getattr(app.state, "sampler_running", False))
+        last = getattr(app.state, "last_sample", None)
+        return JSONResponse({"running": running, "last_sample": last})
+
+
+    @app.get("/api/live_simple")
+    async def get_live_simple():
+        """A lightweight mock live endpoint useful for frontend demos and testing."""
+        import random
+
+        if not getattr(app.state, "sampler_running", False):
+            return JSONResponse({"status": "idle"})
+
+        return JSONResponse({
+            "emotion": random.choice(["happy", "sad", "neutral", "angry"]),
+            "noise_level": random.randint(30, 90),
+            "greenery": random.randint(0, 100),
+        })
+
+
+    async def _sampler_loop(stop_event: asyncio.Event, interval: float = 5.0):
+        """Background sampler loop.
+
+        Tries to use sensor modules when available; otherwise emits simulated values.
+        Logs to the database via cv_mindcare.database_manager.log_session_data.
+        """
+        # Lazy imports so missing optional deps don't break server start
+        dbm = _safe_import("cv_mindcare.database_manager")
+        noise_mod = _safe_import("cv_mindcare.sensors.noise")
+        vision_mod = _safe_import("cv_mindcare.sensors.vision")
+        emotion_mod = _safe_import("cv_mindcare.sensors.emotion")
+
+        while not stop_event.is_set():
+            try:
+                # Gather readings (best-effort)
+                emotion = None
+                avg_db = None
+                green_pct = None
+
+                # Emotion
+                try:
+                    if emotion_mod and hasattr(emotion_mod, "run_emotion_sampling"):
+                        res = emotion_mod.run_emotion_sampling(1)
+                        emotion = res.get("dominant_emotion") if isinstance(res, dict) else None
+                except Exception:
+                    emotion = None
+
+                # Noise
+                try:
+                    if noise_mod and hasattr(noise_mod, "measure_noise_once"):
+                        avg_db = noise_mod.measure_noise_once()
+                except Exception:
+                    avg_db = None
+
+                # Greenery
+                try:
+                    if vision_mod and hasattr(vision_mod, "run_greenery_sampling"):
+                        green_pct = vision_mod.run_greenery_sampling()
+                except Exception:
+                    green_pct = None
+
+                # Fallback simulated values
+                if emotion is None:
+                    emotion = random.choice(["happy", "sad", "neutral", "angry"])
+                if avg_db is None:
+                    avg_db = float(random.randint(30, 80))
+                if green_pct is None:
+                    green_pct = float(random.randint(0, 100))
+
+                sample = {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "dominant_emotion": emotion,
+                    "emotion_counts": {},
+                    "avg_db": float(avg_db),
+                    "noise_classification": None,
+                    "avg_green_pct": float(green_pct),
+                }
+
+                # Log to DB if available
+                try:
+                    if dbm and hasattr(dbm, "log_session_data"):
+                        dbm.log_session_data(sample)
+                except Exception:
+                    # swallow DB errors but keep running
+                    pass
+
+                # Store last sample for status endpoint
+                app.state.last_sample = sample
+
+            except Exception:
+                # Ensure loop doesn't stop on unexpected error
+                pass
+
+            # Wait for interval or stop
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=interval)
+            except asyncio.TimeoutError:
+                continue

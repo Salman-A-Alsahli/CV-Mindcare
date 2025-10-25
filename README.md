@@ -155,3 +155,47 @@ If you'd like to contribute, please open an issue or submit a pull request. For 
 ## License
 
 MIT — see the `LICENSE` file for details.
+
+---
+
+## Quick Start (from Copilot Enhancement Blueprint)
+
+### 1) Setup (Unix / macOS)
+
+```bash
+./setup.sh
+```
+
+### 1b) Setup (Windows PowerShell)
+
+```powershell
+.\setup.ps1
+```
+
+### 2) Run development mode
+
+```bash
+make run
+```
+
+### 3) Build & Serve production
+
+```bash
+make build && make serve
+```
+
+### 4) Run via Docker
+
+```bash
+docker build -t cvmindcare .
+docker run -p 8000:8000 cvmindcare
+
+# then open http://localhost:8000
+```
+
+Note: frontend dependencies include shadcn/ui, lucide-react, framer-motion and recharts. To initialize shadcn UI components run from `frontend/`:
+
+```bash
+npx shadcn@latest init
+npx shadcn add card button input navbar toggle chart
+```

@@ -1,8 +1,9 @@
 import React from 'react'
+import clsx from 'clsx'
 
-export default function SensorCard({title, children}){
+export default function SensorCard({title, children, className=''}){
   return (
-    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+    <div className={clsx('glass-card backdrop-blur-sm bg-white/60 dark:bg-gray-800/40 shadow-lg rounded-xl p-4 border border-white/30', className)}>
       <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-200">{title}</h3>
       <div className="mt-2">{children}</div>
     </div>
