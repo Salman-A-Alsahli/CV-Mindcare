@@ -1,3 +1,4 @@
+# Core Dependencies
 numpy
 sounddevice
 opencv-python
@@ -8,5 +9,26 @@ torch
 accelerate
 safetensors
 pandas
+
+# Backend
 fastapi
 uvicorn[standard]
+psutil
+pydantic
+
+# Launcher GUI
+customtkinter
+
+# Database
+sqlalchemy
+
+# Development Dependencies (optional)
+pytest
+pytest-cov
+pytest-mock
+black
+flake8
+pre-commit
+
+# Testing HTTP
+httpx
