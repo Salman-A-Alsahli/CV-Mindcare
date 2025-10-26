@@ -78,7 +78,7 @@ def insert_sound_analysis(avg_db: float) -> None:
 def get_recent_sensor_data(limit: int = 10) -> List[Dict[str, Any]]:
     with closing(_get_connection()) as conn:
         rows = conn.execute(
-            "SELECT sensor_type, value, timestamp FROM sensor_data ORDER BY timestamp DESC LIMIT ?",
+            "SELECT sensor_type, value, timestamp FROM sensor_data ORDER BY id DESC LIMIT ?",
             (limit,)
         ).fetchall()
         return [dict(row) for row in rows]
@@ -87,7 +87,7 @@ def get_recent_sensor_data(limit: int = 10) -> List[Dict[str, Any]]:
 def get_latest_face_detection() -> Optional[Dict[str, Any]]:
     with closing(_get_connection()) as conn:
         row = conn.execute(
-            "SELECT faces_detected, timestamp FROM face_detection ORDER BY timestamp DESC LIMIT 1"
+            "SELECT faces_detected, timestamp FROM face_detection ORDER BY id DESC LIMIT 1"
         ).fetchone()
         return dict(row) if row else None
 
@@ -95,7 +95,7 @@ def get_latest_face_detection() -> Optional[Dict[str, Any]]:
 def get_latest_sound_analysis() -> Optional[Dict[str, Any]]:
     with closing(_get_connection()) as conn:
         row = conn.execute(
-            "SELECT avg_db, timestamp FROM sound_analysis ORDER BY timestamp DESC LIMIT 1"
+            "SELECT avg_db, timestamp FROM sound_analysis ORDER BY id DESC LIMIT 1"
         ).fetchone()
         return dict(row) if row else None
 

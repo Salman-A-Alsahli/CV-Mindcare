@@ -9,7 +9,7 @@ from pydantic import BaseModel
 import uvicorn
 import psutil
 
-from database import (
+from .database import (
     init_db,
     insert_sensor_data,
     insert_face_detection,
@@ -67,7 +67,7 @@ async def root() -> Dict[str, str]:
 
 
 @app.get("/api/sensors")
-async def get_sensors() -> Dict[str, Dict[str, object]]:
+async def get_sensors() -> Dict:
     status_map = get_sensor_status()
     recent = get_recent_sensor_data(limit=10)
     return {
