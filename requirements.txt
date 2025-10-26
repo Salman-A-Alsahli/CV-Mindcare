@@ -32,3 +32,6 @@ pre-commit
 
 # Testing HTTP
 httpx
+
+# Build & Packaging
+pyinstaller
