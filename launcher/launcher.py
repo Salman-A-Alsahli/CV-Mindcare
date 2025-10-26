@@ -10,27 +10,51 @@ import customtkinter as ctk
 from pathlib import Path
 from system_check import SystemChecker
 from process_manager import ProcessManager
+from config import get_config
+from settings_dialog import show_settings_dialog
+from tray import create_tray_icon
+from updater import check_for_updates_async, UpdateInfo
+import webbrowser
 
 class CVMindcareLauncher(ctk.CTk):
     def __init__(self):
         super().__init__()
 
+        # Load configuration
+        self.config = get_config()
+
         # Configure window
         self.title("CV-Mindcare System")
-        self.geometry("700x500")
+        window_width = self.config.get("ui", "window_width")
+        window_height = self.config.get("ui", "window_height")
+        self.geometry(f"{window_width}x{window_height}")
         
-        # Set theme
-        ctk.set_appearance_mode("dark")
+        # Set theme from config
+        theme = self.config.get("ui", "theme")
+        ctk.set_appearance_mode(theme)
         ctk.set_default_color_theme("blue")
         
         # Initialize system components
         self.system_checker = SystemChecker()
         self.process_manager = None
         self.checks_passed = False
+        self.system_tray = None
 
         # Initialize UI
         self._create_widgets()
         self._layout_widgets()
+        
+        # Check for updates on startup
+        if self.config.should_check_updates():
+            self.after(1000, self._check_for_updates)
+        
+        # Start minimized if configured
+        if self.config.get("launcher", "start_minimized"):
+            self.after(500, self.withdraw)
+        
+        # Initialize system tray if enabled
+        if self.config.should_minimize_to_tray():
+            self.after(100, self._init_system_tray)
         
         # Run initial system check
         self.after(500, self._run_system_check)
@@ -68,6 +92,12 @@ class CVMindcareLauncher(ctk.CTk):
         self.log_text.configure(state="disabled")
         
         # Buttons
+        self.settings_button = ctk.CTkButton(
+            self,
+            text="⚙️ Settings",
+            command=self._open_settings,
+            width=120
+        )
         self.check_button = ctk.CTkButton(
             self,
             text="Re-run System Check",
@@ -116,11 +146,12 @@ class CVMindcareLauncher(ctk.CTk):
         # Button layout
         button_frame = ctk.CTkFrame(self, fg_color="transparent")
         button_frame.grid(row=3, column=0, padx=20, pady=15, sticky="ew")
-        button_frame.grid_columnconfigure((0, 1, 2), weight=1)
+        button_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
         
-        self.check_button.grid(row=0, column=0, padx=10, sticky="ew", in_=button_frame)
-        self.start_button.grid(row=0, column=1, padx=10, sticky="ew", in_=button_frame)
-        self.stop_button.grid(row=0, column=2, padx=10, sticky="ew", in_=button_frame)
+        self.settings_button.grid(row=0, column=0, padx=10, sticky="ew", in_=button_frame)
+        self.check_button.grid(row=0, column=1, padx=10, sticky="ew", in_=button_frame)
+        self.start_button.grid(row=0, column=2, padx=10, sticky="ew", in_=button_frame)
+        self.stop_button.grid(row=0, column=3, padx=10, sticky="ew", in_=button_frame)
 
     def _add_status_line(self, line: str):
         """Add a line to the status text."""
@@ -209,12 +240,120 @@ class CVMindcareLauncher(ctk.CTk):
         self.start_button.configure(state="normal")
         self.stop_button.configure(state="disabled")
     
+    def _init_system_tray(self):
+        """Initialize system tray icon."""
+        try:
+            self.system_tray = create_tray_icon(
+                self,
+                on_show=self._on_tray_show,
+                on_quit=self._on_tray_quit
+            )
+            self._add_log_line("System tray icon initialized.")
+        except Exception as e:
+            self._add_log_line(f"Could not initialize system tray: {e}")
+    
+    def _on_tray_show(self):
+        """Handle show from tray."""
+        self._add_log_line("Window restored from tray.")
+    
+    def _on_tray_quit(self):
+        """Handle quit from tray."""
+        self.on_closing()
+    
+    def _open_settings(self):
+        """Open settings dialog."""
+        def on_settings_saved():
+            self._add_log_line("Settings saved successfully.")
+            # Reload configuration
+            self.config = get_config()
+            # Apply new theme
+            theme = self.config.get("ui", "theme")
+            ctk.set_appearance_mode(theme)
+            # Update window size
+            width = self.config.get("ui", "window_width")
+            height = self.config.get("ui", "window_height")
+            self.geometry(f"{width}x{height}")
+        
+        show_settings_dialog(self, on_save=on_settings_saved)
+    
+    def _check_for_updates(self):
+        """Check for updates in background."""
+        def on_update_check(update_info: UpdateInfo):
+            if update_info:
+                self._show_update_notification(update_info)
+            else:
+                self._add_log_line("✓ Application is up to date.")
+        
+        self._add_log_line("Checking for updates...")
+        check_for_updates_async(on_update_check)
+    
+    def _show_update_notification(self, update_info: UpdateInfo):
+        """Show update notification dialog."""
+        self._add_log_line(f"🎉 New version available: {update_info.version}")
+        
+        # Create update dialog
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Update Available")
+        dialog.geometry("400x300")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Title
+        title_label = ctk.CTkLabel(
+            dialog,
+            text=f"New Version Available: {update_info.version}",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        title_label.pack(pady=15)
+        
+        # Release notes
+        notes_frame = ctk.CTkFrame(dialog)
+        notes_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        notes_text = ctk.CTkTextbox(notes_frame, wrap="word")
+        notes_text.pack(fill="both", expand=True, padx=5, pady=5)
+        notes_text.insert("1.0", update_info.release_notes)
+        notes_text.configure(state="disabled")
+        
+        # Buttons
+        button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        button_frame.pack(pady=15)
+        
+        def open_download():
+            webbrowser.open(update_info.download_url)
+            dialog.destroy()
+        
+        download_button = ctk.CTkButton(
+            button_frame,
+            text="Download",
+            command=open_download,
+            fg_color="green",
+            hover_color="darkgreen",
+            width=120
+        )
+        download_button.pack(side="left", padx=10)
+        
+        later_button = ctk.CTkButton(
+            button_frame,
+            text="Later",
+            command=dialog.destroy,
+            width=120
+        )
+        later_button.pack(side="left", padx=10)
+    
     def on_closing(self):
         """Handle window closing."""
-        if self.process_manager is not None:
-            self._add_log_line("Shutting down...")
-            self.process_manager.cleanup()
-        self.destroy()
+        # Check if minimize to tray is enabled
+        if self.config.should_minimize_to_tray() and self.system_tray:
+            self.withdraw()
+            self._add_log_line("Minimized to system tray.")
+        else:
+            if self.process_manager is not None:
+                self._add_log_line("Shutting down...")
+                self.process_manager.cleanup()
+            if self.system_tray:
+                self.system_tray.stop()
+            self.destroy()
 
 def main():
     app = CVMindcareLauncher()

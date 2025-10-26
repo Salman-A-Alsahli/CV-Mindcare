@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional, Callable
 import sys
 import os
+from config import get_config
 
 
 class ProcessManager:
@@ -31,7 +32,10 @@ class ProcessManager:
             self.backend_dir = Path(backend_dir)
             
         self.process: Optional[subprocess.Popen] = None
-        self.backend_url = "http://127.0.0.1:8000"
+        
+        # Get backend URL from config
+        self.config = get_config()
+        self.backend_url = self.config.get_backend_url()
         self.health_endpoint = f"{self.backend_url}/"
         
     def start_backend(self, log_callback: Optional[Callable[[str], None]] = None) -> bool:
@@ -53,14 +57,18 @@ class ProcessManager:
             # Find Python executable
             python_exe = sys.executable
             
+            # Get backend configuration
+            backend_host = self.config.get("backend", "host")
+            backend_port = self.config.get_backend_port()
+            
             # Build command
             cmd = [
                 python_exe,
                 "-m",
                 "uvicorn",
                 "app:app",
-                "--host", "127.0.0.1",
-                "--port", "8000"
+                "--host", backend_host,
+                "--port", str(backend_port)
             ]
             
             if log_callback:

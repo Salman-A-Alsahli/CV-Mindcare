@@ -18,6 +18,9 @@ pydantic
 
 # Launcher GUI
 customtkinter
+pystray
+Pillow
+packaging
 
 # Database
 sqlalchemy
