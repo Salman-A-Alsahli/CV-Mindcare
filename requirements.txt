@@ -9,6 +9,7 @@ torch
 accelerate
 safetensors
 pandas
+scipy
 
 # Backend
 fastapi
