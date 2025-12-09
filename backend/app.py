@@ -156,7 +156,7 @@ async def get_live() -> Dict[str, object]:
     return {
         "faces_detected": face["faces_detected"],
         "avg_db": sound["avg_db"],
-    "dominant_emotion": dominant_emotion,
+        "dominant_emotion": dominant_emotion,
         "avg_green_pct": next(
             (record["value"] for record in recent if record["sensor_type"].lower() == "greenery"),
             0.0,
