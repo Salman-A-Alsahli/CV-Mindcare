@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Dict, Optional
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -170,6 +170,79 @@ async def get_live() -> Dict[str, object]:
 @app.post("/api/control/stop")
 async def stop_collection() -> Dict[str, str]:
     return {"message": "data collection stop requested"}
+
+
+# Camera Sensor Endpoints (Phase 3)
+
+@app.get("/api/sensors/camera/status")
+async def get_camera_status() -> Dict[str, object]:
+    """
+    Get camera sensor status.
+    
+    Returns sensor availability and configuration information.
+    """
+    try:
+        from .sensors.camera_sensor import check_camera_available
+        available = check_camera_available()
+        return {
+            "sensor_type": "camera",
+            "available": available,
+            "backend": "opencv",
+            "status": "available" if available else "unavailable",
+        }
+    except Exception as e:
+        return {
+            "sensor_type": "camera",
+            "available": False,
+            "status": "error",
+            "error": str(e),
+        }
+
+
+@app.get("/api/sensors/camera/capture")
+async def capture_camera_data() -> Dict[str, object]:
+    """
+    Capture camera data with greenery detection.
+    
+    Returns greenery percentage and analysis metadata.
+    Automatically falls back to mock mode if hardware unavailable.
+    """
+    try:
+        from .sensors.camera_sensor import get_camera_reading
+        data = get_camera_reading()
+        
+        # Store greenery data in database
+        if not data.get('mock_mode', False):
+            greenery_pct = data.get('greenery_percentage', 0.0)
+            insert_sensor_data("greenery", greenery_pct)
+        
+        return data
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Camera capture failed: {str(e)}"
+        )
+
+
+@app.post("/api/sensors/camera/greenery", status_code=status.HTTP_201_CREATED)
+async def post_greenery_data(greenery_percentage: float) -> Dict[str, str]:
+    """
+    Manually submit greenery detection data.
+    
+    Args:
+        greenery_percentage: Percentage of green pixels (0-100)
+    
+    Returns:
+        Confirmation message
+    """
+    if not 0 <= greenery_percentage <= 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Greenery percentage must be between 0 and 100"
+        )
+    
+    insert_sensor_data("greenery", greenery_percentage)
+    return {"message": "greenery data recorded"}
 
 
 @app.get("/api/context")

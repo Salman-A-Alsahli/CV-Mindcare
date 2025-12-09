@@ -174,5 +174,48 @@ class TestControlEndpoint:
         assert data["message"] == "data collection stop requested"
 
 
+class TestCameraEndpoints:
+    """Tests for camera sensor endpoints (Phase 3)."""
+    
+    def test_get_camera_status(self):
+        """Test GET /api/sensors/camera/status."""
+        response = client.get("/api/sensors/camera/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert "sensor_type" in data
+        assert data["sensor_type"] == "camera"
+        assert "available" in data
+        assert "status" in data
+    
+    def test_capture_camera_data(self):
+        """Test GET /api/sensors/camera/capture."""
+        response = client.get("/api/sensors/camera/capture")
+        assert response.status_code == 200
+        data = response.json()
+        assert "timestamp" in data
+        assert "sensor_type" in data
+        assert data["sensor_type"] == "camera"
+        assert "greenery_percentage" in data
+        assert 0 <= data["greenery_percentage"] <= 100
+        assert "mock_mode" in data
+    
+    def test_post_greenery_data(self):
+        """Test POST /api/sensors/camera/greenery."""
+        response = client.post("/api/sensors/camera/greenery?greenery_percentage=25.5")
+        assert response.status_code == 201
+        data = response.json()
+        assert "message" in data
+    
+    def test_post_greenery_data_invalid_low(self):
+        """Test POST /api/sensors/camera/greenery with invalid low value."""
+        response = client.post("/api/sensors/camera/greenery?greenery_percentage=-5")
+        assert response.status_code == 400
+    
+    def test_post_greenery_data_invalid_high(self):
+        """Test POST /api/sensors/camera/greenery with invalid high value."""
+        response = client.post("/api/sensors/camera/greenery?greenery_percentage=105")
+        assert response.status_code == 400
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
