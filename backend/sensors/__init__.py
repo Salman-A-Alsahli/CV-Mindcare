@@ -1,51 +1,38 @@
 """
-Sensors Package
---------------
-Contains all sensor modules for CV-Mindcare data collection.
+Sensors Package (Phase 2: Sensor Infrastructure)
+-------------------------------------------------
+Contains all sensor modules for CV-Mindcare data collection with robust
+error handling and automatic mock mode fallback.
+
+Basic imports (always available):
+    from backend.sensors import BaseSensor, SensorStatus, SensorError
+
+Specific sensors (require additional dependencies):
+    from backend.sensors.camera import CameraSensor  # requires opencv
+    from backend.sensors.microphone import MicrophoneSensor  # requires sounddevice
 """
 
-from .base import BaseSensor, SensorStatus, SensorError, SensorUnavailableError
-from .camera import CameraSensor, get_camera_reading, check_camera_available
-from .microphone import MicrophoneSensor, get_sound_reading, check_microphone_available
-from .system_monitor import SystemMonitor, get_system_reading, get_detailed_system_info
-from .emotion_detection import (
-    EmotionDetector,
-    detect_emotion,
-    analyze_image_emotion,
-    get_available_models,
-    check_deepface_available
-)
-from .sound_analysis import (
-    SoundAnalyzer,
-    analyze_sound,
-    get_audio_devices,
-    check_scipy_available
+# Always available (no heavy dependencies)
+from .base import (
+    BaseSensor,
+    SensorStatus,
+    SensorError,
+    SensorUnavailableError,
+    SensorConfigError,
 )
 
 __all__ = [
-    # Base classes
+    # Base classes (always available)
     'BaseSensor',
     'SensorStatus',
     'SensorError',
     'SensorUnavailableError',
-    # Sensors
-    'CameraSensor',
-    'MicrophoneSensor',
-    'SystemMonitor',
-    'EmotionDetector',
-    'SoundAnalyzer',
-    # Convenience functions
-    'get_camera_reading',
-    'get_sound_reading',
-    'get_system_reading',
-    'get_detailed_system_info',
-    'check_camera_available',
-    'check_microphone_available',
-    'detect_emotion',
-    'analyze_image_emotion',
-    'get_available_models',
-    'check_deepface_available',
-    'analyze_sound',
-    'get_audio_devices',
-    'check_scipy_available',
+    'SensorConfigError',
 ]
+
+# Note: Specific sensor implementations should be imported explicitly
+# to avoid dependency issues during testing and development.
+# 
+# Example:
+#   from backend.sensors.camera import CameraSensor
+#   from backend.sensors.microphone import MicrophoneSensor
