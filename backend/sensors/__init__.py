@@ -1,6 +1,6 @@
 """
 Sensors Package (Phase 2: Sensor Infrastructure)
--------------------------------------------------
+
 Contains all sensor modules for CV-Mindcare data collection with robust
 error handling and automatic mock mode fallback.
 

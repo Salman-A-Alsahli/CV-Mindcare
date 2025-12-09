@@ -256,10 +256,10 @@ class BaseSensor(ABC):
                 self.error_message = f"Hardware error (using mock mode): {str(e)}"
                 self._start_time = datetime.now()
                 return True
-            except:
+            except Exception as fallback_error:
                 self.status = SensorStatus.ERROR
                 self.error_message = str(e)
-                logger.error(f"{self.name} failed to start even in mock mode")
+                logger.error(f"{self.name} failed to start even in mock mode: {fallback_error}")
                 return False
     
     def stop(self) -> bool:

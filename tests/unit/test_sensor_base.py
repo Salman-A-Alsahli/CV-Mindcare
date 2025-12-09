@@ -5,6 +5,7 @@ Tests for the abstract base sensor with all status states and mock mode support.
 """
 
 import pytest
+import time
 from datetime import datetime
 from typing import Dict, Any
 
@@ -374,7 +375,6 @@ class TestSensorEdgeCases:
     
     def test_uptime_calculation(self):
         """Test uptime is calculated correctly."""
-        import time
         sensor = MockSensor()
         sensor.start()
         
