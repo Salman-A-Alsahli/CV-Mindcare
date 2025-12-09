@@ -12,6 +12,7 @@ pytest-mock
 # Code Quality
 black
 flake8
+mypy
 pre-commit
 
 # Build & Packaging
