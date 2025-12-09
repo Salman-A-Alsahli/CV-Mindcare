@@ -63,6 +63,11 @@ class SensorManager:
         manager.stop_all()
     """
     
+    # Class constants
+    THREAD_STOP_TIMEOUT = 5.0  # Seconds to wait for polling thread shutdown
+    HEALTH_ERROR_PENALTY = 10  # Health score penalty per error
+    HEALTH_ERROR_MAX_PENALTY = 30  # Maximum penalty from errors
+    
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
         Initialize sensor manager.
@@ -87,6 +92,7 @@ class SensorManager:
         self.running = False
         self._lock = threading.Lock()
         self._polling_thread: Optional[threading.Thread] = None
+        self._start_time: Optional[datetime] = None
         
         # Health tracking
         self._retry_counts: Dict[str, int] = {
@@ -138,6 +144,7 @@ class SensorManager:
             self._polling_thread.start()
             
             self.status = ManagerStatus.RUNNING
+            self._start_time = datetime.now()  # Set start time when running
             logger.info(f"SensorManager started (camera={camera_ok}, microphone={microphone_ok})")
             return True
     
@@ -156,17 +163,21 @@ class SensorManager:
             self.status = ManagerStatus.STOPPING
             logger.info("Stopping all sensors...")
             
+            # Calculate final uptime before clearing
+            final_uptime = self._calculate_uptime()
+            
             # Stop polling thread
             self.running = False
             if self._polling_thread and self._polling_thread.is_alive():
-                self._polling_thread.join(timeout=5.0)
+                self._polling_thread.join(timeout=self.THREAD_STOP_TIMEOUT)
             
             # Stop individual sensors
             camera_ok = self._stop_sensor(self.camera, 'camera')
             microphone_ok = self._stop_sensor(self.microphone, 'microphone')
             
             self.status = ManagerStatus.STOPPED
-            logger.info(f"SensorManager stopped (camera={camera_ok}, microphone={microphone_ok})")
+            self._start_time = None  # Clear start time after calculating uptime
+            logger.info(f"SensorManager stopped (camera={camera_ok}, microphone={microphone_ok}, uptime={final_uptime}s)")
             return True
     
     def get_all_status(self) -> Dict[str, Any]:
@@ -272,7 +283,7 @@ class SensorManager:
             
             # Penalize for errors
             if error_count > 0:
-                penalty = min(10 * error_count, 30)
+                penalty = min(self.HEALTH_ERROR_PENALTY * error_count, self.HEALTH_ERROR_MAX_PENALTY)
                 health_score -= penalty
                 issues.append(f"{sensor_name} has {error_count} errors")
         
@@ -442,14 +453,6 @@ class SensorManager:
         Returns:
             float: Uptime in seconds, or None if not running
         """
-        if not hasattr(self, '_start_time'):
-            self._start_time = None
-        
-        if self.status == ManagerStatus.RUNNING and not self._start_time:
-            self._start_time = datetime.now()
-        elif self.status != ManagerStatus.RUNNING:
-            self._start_time = None
-        
         if self._start_time:
             return (datetime.now() - self._start_time).total_seconds()
         return None
