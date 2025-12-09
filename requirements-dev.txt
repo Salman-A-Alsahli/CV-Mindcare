@@ -6,6 +6,7 @@
 # Testing
 pytest
 pytest-cov
+pytest-asyncio
 pytest-mock
 
 # Code Quality

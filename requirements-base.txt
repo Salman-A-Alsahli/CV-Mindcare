@@ -9,6 +9,7 @@ scipy
 # Backend API
 fastapi
 uvicorn[standard]
+websockets
 psutil
 pydantic
 

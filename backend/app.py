@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Dict, Optional
 
-from fastapi import FastAPI, status, HTTPException
+from fastapi import FastAPI, status, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -530,6 +530,50 @@ async def update_manager_config(config: ManagerConfig) -> Dict[str, object]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update config: {str(e)}"
         )
+
+
+# WebSocket Endpoints (Phase 6)
+
+@app.websocket("/ws/live")
+async def websocket_live_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time sensor data streaming.
+    
+    Endpoint: ws://localhost:8000/ws/live
+    
+    Features:
+    - Real-time sensor data push (camera, microphone)
+    - Configurable data rate (1-10 Hz)
+    - System resource monitoring
+    - Automatic reconnection support
+    
+    Message Types:
+    - sensor_data: Periodic sensor readings with timestamp
+    - status: Connection and system status updates
+    - error: Error notifications
+    
+    Client Commands:
+    - set_rate: Update streaming rate in Hz
+    
+    Example:
+        Send: {"command": "set_rate", "rate": 2.0}
+        Receive: {"type": "sensor_data", "timestamp": "...", "sensors": {...}}
+    """
+    from .websocket_routes import websocket_endpoint
+    manager = get_sensor_manager()
+    await websocket_endpoint(websocket, sensor_manager=manager)
+
+
+@app.get("/api/websocket/status")
+async def get_websocket_status() -> Dict[str, object]:
+    """
+    Get WebSocket connection manager status.
+    
+    Returns:
+        Number of active connections and status
+    """
+    from .websocket_routes import manager as ws_manager
+    return ws_manager.get_status()
 
 
 if __name__ == "__main__":
