@@ -192,6 +192,8 @@ class CameraSensor(BaseSensor):
         Raises:
             SensorError: If capture or analysis fails
         """
+        from .base import SensorError
+        
         # Capture frame
         if self.backend == 'picamera2':
             frame = self._capture_picamera2()
@@ -199,7 +201,7 @@ class CameraSensor(BaseSensor):
             frame = self._capture_opencv()
         
         if frame is None:
-            raise Exception("Failed to capture frame")
+            raise SensorError("Failed to capture frame")
         
         # Analyze greenery
         greenery_pct = self._analyze_greenery(frame)
