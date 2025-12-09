@@ -260,13 +260,20 @@ class MicrophoneSensor(BaseSensor):
             total_samples = int(self.sample_duration * self.sample_rate)
             audio_data = []
             
-            # Read data in chunks
-            while len(audio_data) < total_samples:
+            # Read data in chunks with timeout protection
+            max_iterations = int(total_samples / 4410) + 100  # Allow ~100ms periods + margin
+            iteration = 0
+            
+            while len(audio_data) < total_samples and iteration < max_iterations:
                 length, data = self.alsa_device.read()
                 if length > 0:
                     # Convert bytes to numpy array (16-bit PCM)
                     samples = np.frombuffer(data, dtype=np.int16)
                     audio_data.extend(samples)
+                iteration += 1
+            
+            if len(audio_data) < total_samples:
+                logger.warning(f"ALSA capture incomplete: {len(audio_data)}/{total_samples} samples")
             
             # Convert to float32 and normalize to [-1, 1]
             audio_array = np.array(audio_data[:total_samples], dtype=np.float32) / 32768.0
@@ -375,8 +382,8 @@ class MicrophoneSensor(BaseSensor):
             if self.alsa_device is not None:
                 try:
                     self.alsa_device.close()
-                except:
-                    pass
+                except (OSError, AttributeError) as e:
+                    logger.warning(f"Error closing ALSA device: {e}")
                 self.alsa_device = None
                 logger.info("ALSA device closed")
             

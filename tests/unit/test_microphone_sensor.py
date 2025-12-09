@@ -256,9 +256,11 @@ class TestMicrophoneAudioAnalysis:
             (90, "Very Noisy"),
         ]
         
+        db_reference = sensor.db_reference  # Use sensor's reference instead of hardcoded -60
+        
         for db_level, expected_classification in test_cases:
             # Calculate audio that would give this dB level
-            raw_db = -60 + (db_level / 100.0) * 60
+            raw_db = db_reference + (db_level / 100.0) * abs(db_reference)
             rms = 10 ** (raw_db / 20.0)
             
             # Create audio with this RMS
