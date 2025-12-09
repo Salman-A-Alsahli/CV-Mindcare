@@ -269,5 +269,77 @@ class TestMicrophoneEndpoints:
         assert response.status_code == 400
 
 
+class TestSensorManagerEndpoints:
+    """Tests for sensor manager endpoints (Phase 5)."""
+    
+    def test_get_manager_status(self):
+        """Test GET /api/sensors/manager/status returns status."""
+        response = client.get("/api/sensors/manager/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert "manager" in data
+        assert "sensors" in data
+        assert "timestamp" in data
+        assert "camera" in data["sensors"]
+        assert "microphone" in data["sensors"]
+    
+    def test_start_manager(self):
+        """Test POST /api/sensors/manager/start starts manager."""
+        response = client.post("/api/sensors/manager/start")
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+        assert "status" in data
+        
+        # Stop after test
+        client.post("/api/sensors/manager/stop")
+    
+    def test_stop_manager(self):
+        """Test POST /api/sensors/manager/stop stops manager."""
+        # Start first
+        client.post("/api/sensors/manager/start")
+        
+        response = client.post("/api/sensors/manager/stop")
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+        assert "success" in data
+        assert "status" in data
+    
+    def test_get_manager_health(self):
+        """Test GET /api/sensors/manager/health returns health info."""
+        response = client.get("/api/sensors/manager/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert "health_score" in data
+        assert "status" in data
+        assert "issues" in data
+        assert "manager" in data
+        assert "sensors" in data
+        assert 0 <= data["health_score"] <= 100
+    
+    def test_update_manager_config(self):
+        """Test PUT /api/sensors/manager/config updates configuration."""
+        payload = {
+            "polling_interval": 3.0,
+            "auto_recover": False
+        }
+        response = client.put("/api/sensors/manager/config", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+        assert "config" in data
+        assert "status" in data
+        assert data["config"]["polling_interval"] == 3.0
+    
+    def test_update_manager_config_partial(self):
+        """Test PUT /api/sensors/manager/config with partial update."""
+        payload = {"max_retries": 5}
+        response = client.put("/api/sensors/manager/config", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["config"]["max_retries"] == 5
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

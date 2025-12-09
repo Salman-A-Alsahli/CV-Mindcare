@@ -383,5 +383,154 @@ async def get_context(days: int = 30) -> Dict[str, object]:
     }
 
 
+# Sensor Manager Endpoints (Phase 5)
+_sensor_manager = None
+
+
+def get_sensor_manager():
+    """Get or create the global sensor manager instance."""
+    global _sensor_manager
+    if _sensor_manager is None:
+        from .sensors.sensor_manager import SensorManager
+        _sensor_manager = SensorManager(config={
+            'polling_interval': 5.0,
+            'auto_start': False,  # Manual start via API
+            'auto_recover': True,
+            'max_retries': 3
+        })
+    return _sensor_manager
+
+
+@app.get("/api/sensors/manager/status")
+async def get_manager_status() -> Dict[str, object]:
+    """
+    Get sensor manager status.
+    
+    Returns:
+        Status of manager and all managed sensors
+    """
+    try:
+        manager = get_sensor_manager()
+        return manager.get_all_status()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get manager status: {str(e)}"
+        )
+
+
+@app.post("/api/sensors/manager/start", status_code=status.HTTP_200_OK)
+async def start_manager() -> Dict[str, object]:
+    """
+    Start sensor manager and all sensors.
+    
+    Returns:
+        Status after starting
+    """
+    try:
+        manager = get_sensor_manager()
+        success = manager.start_all()
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to start any sensors"
+            )
+        
+        return {
+            "message": "Sensor manager started",
+            "status": manager.get_all_status()
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to start manager: {str(e)}"
+        )
+
+
+@app.post("/api/sensors/manager/stop", status_code=status.HTTP_200_OK)
+async def stop_manager() -> Dict[str, object]:
+    """
+    Stop sensor manager and all sensors.
+    
+    Returns:
+        Status after stopping
+    """
+    try:
+        manager = get_sensor_manager()
+        success = manager.stop_all()
+        
+        return {
+            "message": "Sensor manager stopped",
+            "success": success,
+            "status": manager.get_all_status()
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to stop manager: {str(e)}"
+        )
+
+
+@app.get("/api/sensors/manager/health")
+async def get_manager_health() -> Dict[str, object]:
+    """
+    Get sensor manager health metrics.
+    
+    Returns:
+        Detailed health information with scores and diagnostics
+    """
+    try:
+        manager = get_sensor_manager()
+        return manager.get_health()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get manager health: {str(e)}"
+        )
+
+
+class ManagerConfig(BaseModel):
+    """Configuration model for sensor manager."""
+    polling_interval: Optional[float] = None
+    auto_recover: Optional[bool] = None
+    max_retries: Optional[int] = None
+
+
+@app.put("/api/sensors/manager/config", status_code=status.HTTP_200_OK)
+async def update_manager_config(config: ManagerConfig) -> Dict[str, object]:
+    """
+    Update sensor manager configuration.
+    
+    Args:
+        config: New configuration values
+    
+    Returns:
+        Updated configuration and status
+    """
+    try:
+        manager = get_sensor_manager()
+        config_dict = config.model_dump(exclude_none=True)
+        
+        success = manager.update_config(config_dict)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to update configuration"
+            )
+        
+        return {
+            "message": "Configuration updated",
+            "config": config_dict,
+            "status": manager.get_all_status()
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update config: {str(e)}"
+        )
+
+
 if __name__ == "__main__":
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
