@@ -15,13 +15,14 @@ CV Mindcare is a **privacy-first local wellness monitoring application** that ob
 ## ⭐ Key Features
 
 ✅ **Privacy-First:** All processing happens locally - zero cloud dependencies  
+✅ **Modern Web Dashboard:** Beautiful React interface for real-time monitoring and analytics  
 ✅ **Smart Monitoring:** Camera (greenery) + Microphone (noise) + AI recommendations  
 ✅ **Real-Time Streaming:** WebSocket support for live data  
-✅ **Advanced Analytics:** Trends, anomalies, correlations  
+✅ **Advanced Analytics:** Trends, anomalies, correlations with interactive charts  
 ✅ **Easy Integration:** REST API + examples in Python, JavaScript, curl  
 ✅ **Production Ready:** 228 tests, CI/CD pipeline, optimized for Raspberry Pi 5  
 
-This repository includes a lightweight local database and a context-aware AI assistant that uses historical data to provide personalized recommendations.
+This repository includes a lightweight local database, a context-aware AI assistant that uses historical data to provide personalized recommendations, and a modern web dashboard for easy monitoring.
 
 ## Architecture
 
@@ -44,10 +45,64 @@ The data flow has been upgraded from a simple pipeline to a context-rich loop th
 
 This loop allows the assistant to become more personalized and useful over time as more sessions are logged.
 
+## 🚀 Quick Start (5 Minutes)
+
+### Option 1: Web Dashboard (Recommended)
+
+```bash
+# 1. Install frontend dependencies (one-time)
+./setup-frontend.sh
+
+# 2. Start both backend and dashboard
+./start-dashboard.sh
+
+# 3. Open your browser
+# Backend API: http://localhost:8000
+# Dashboard: http://localhost:5173
+```
+
+### Option 2: Desktop GUI
+
+```bash
+# Install dependencies
+pip install -r requirements-base.txt
+
+# Launch application
+python launcher/main.py
+```
+
+### Option 3: API Only
+
+```bash
+# Install and start backend
+pip install -r requirements-base.txt
+uvicorn backend.app:app --reload
+
+# Access API at http://localhost:8000/docs
+```
+
+## 📊 Web Dashboard Features
+
+The modern React web dashboard provides:
+
+- **Real-Time Monitoring:** Live sensor data with automatic refresh
+- **Wellness Score:** AI-powered wellness tracking with visual gauges
+- **Interactive Charts:** Hourly, daily, and weekly trends with multiple views
+- **Smart Recommendations:** Context-aware suggestions with actionable steps
+- **Pattern Detection:** Automatic identification of recurring issues
+- **Dark Mode:** Beautiful dark/light theme switching
+- **Responsive Design:** Works on desktop, tablet, and mobile
+
 ## Project structure
 
 ```
 CV-Mindcare/
+├── frontend/              # React web dashboard
+│   ├── src/
+│   │   ├── components/   # Dashboard components
+│   │   ├── services/     # API integration
+│   │   └── utils/        # Helper functions
+│   └── package.json      # Frontend dependencies
 ├── backend/              # FastAPI backend server
 │   ├── app.py           # Main API application
 │   ├── database.py      # SQLite database operations
