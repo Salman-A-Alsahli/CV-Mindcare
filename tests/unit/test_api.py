@@ -341,5 +341,127 @@ class TestSensorManagerEndpoints:
         assert data["config"]["max_retries"] == 5
 
 
+class TestAnalyticsAPI:
+    """Test analytics API endpoints (Phase 7)."""
+    
+    def test_get_aggregated_greenery_data(self):
+        """Test GET /api/analytics/aggregate/greenery returns aggregated data."""
+        response = client.get("/api/analytics/aggregate/greenery?period=hourly&days=1")
+        assert response.status_code == 200
+        data = response.json()
+        assert "data_type" in data
+        assert "period" in data
+        assert "days" in data
+        assert "count" in data
+        assert "data" in data
+        assert data["data_type"] == "greenery"
+        assert data["period"] == "hourly"
+        assert isinstance(data["data"], list)
+    
+    def test_get_aggregated_noise_data(self):
+        """Test GET /api/analytics/aggregate/noise returns aggregated data."""
+        response = client.get("/api/analytics/aggregate/noise?period=daily&days=7")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data_type"] == "noise"
+        assert data["period"] == "daily"
+        assert data["days"] == 7
+    
+    def test_get_aggregated_invalid_type(self):
+        """Test aggregation with invalid data type returns 400."""
+        response = client.get("/api/analytics/aggregate/invalid")
+        assert response.status_code == 400
+    
+    def test_get_aggregated_invalid_period(self):
+        """Test aggregation with invalid period returns 400."""
+        response = client.get("/api/analytics/aggregate/greenery?period=invalid")
+        assert response.status_code == 400
+    
+    def test_get_statistics_greenery(self):
+        """Test GET /api/analytics/statistics/greenery returns statistics."""
+        response = client.get("/api/analytics/statistics/greenery?days=7")
+        assert response.status_code == 200
+        data = response.json()
+        assert "data_type" in data
+        assert "days" in data
+        assert "statistics" in data
+        
+        stats = data["statistics"]
+        assert "count" in stats
+        assert "avg" in stats
+        assert "min" in stats
+        assert "max" in stats
+        assert "stddev" in stats
+        assert "median" in stats
+        assert "range" in stats
+    
+    def test_get_statistics_noise(self):
+        """Test GET /api/analytics/statistics/noise returns statistics."""
+        response = client.get("/api/analytics/statistics/noise?days=14")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data_type"] == "noise"
+        assert data["days"] == 14
+    
+    def test_get_statistics_invalid_type(self):
+        """Test statistics with invalid data type returns 400."""
+        response = client.get("/api/analytics/statistics/invalid")
+        assert response.status_code == 400
+    
+    def test_get_trends(self):
+        """Test GET /api/analytics/trends/greenery returns trend analysis."""
+        response = client.get("/api/analytics/trends/greenery?period=daily&days=7")
+        assert response.status_code == 200
+        data = response.json()
+        assert "data_type" in data
+        assert "period" in data
+        assert "days" in data
+        assert "trends" in data
+        
+        trends = data["trends"]
+        assert "direction" in trends
+        assert "slope" in trends
+        assert "confidence" in trends
+        assert "change_percent" in trends
+        assert trends["direction"] in ["increasing", "decreasing", "stable"]
+    
+    def test_get_trends_invalid_period(self):
+        """Test trends with invalid period returns 400."""
+        response = client.get("/api/analytics/trends/greenery?period=invalid")
+        assert response.status_code == 400
+    
+    def test_get_anomalies(self):
+        """Test GET /api/analytics/anomalies/greenery returns anomaly detection."""
+        response = client.get("/api/analytics/anomalies/greenery?days=7&threshold=2.0")
+        assert response.status_code == 200
+        data = response.json()
+        assert "data_type" in data
+        assert "days" in data
+        assert "threshold_stddev" in data
+        assert "count" in data
+        assert "anomalies" in data
+        assert isinstance(data["anomalies"], list)
+    
+    def test_get_anomalies_noise(self):
+        """Test anomaly detection for noise data."""
+        response = client.get("/api/analytics/anomalies/noise?days=3")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data_type"] == "noise"
+    
+    def test_get_correlation(self):
+        """Test GET /api/analytics/correlation returns correlation analysis."""
+        response = client.get("/api/analytics/correlation?days=7")
+        assert response.status_code == 200
+        data = response.json()
+        assert "days" in data
+        assert "correlation" in data
+        
+        corr = data["correlation"]
+        assert "coefficient" in corr
+        assert "strength" in corr
+        assert "direction" in corr
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -576,5 +576,262 @@ async def get_websocket_status() -> Dict[str, object]:
     return ws_manager.get_status()
 
 
+# ============================================================================
+# Analytics Endpoints (Phase 7)
+# ============================================================================
+
+# Global analytics instance
+_analytics = None
+
+def get_analytics():
+    """Get or create analytics instance."""
+    global _analytics
+    if _analytics is None:
+        from .analytics import Analytics
+        _analytics = Analytics()
+    return _analytics
+
+
+@app.get("/api/analytics/aggregate/{data_type}")
+async def get_aggregated_data(
+    data_type: str,
+    period: str = "hourly",
+    days: int = 7,
+    limit: int = 100
+) -> Dict[str, object]:
+    """
+    Get aggregated sensor data by time period.
+    
+    Args:
+        data_type: Type of data ('greenery' or 'noise')
+        period: Aggregation period ('hourly', 'daily', 'weekly', 'monthly')
+        days: Number of days to include (default: 7)
+        limit: Maximum number of aggregated points (default: 100)
+    
+    Returns:
+        List of aggregated data points with timestamp and statistics
+    """
+    valid_types = ['greenery', 'noise']
+    if data_type not in valid_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid data_type. Must be one of: {valid_types}"
+        )
+    
+    valid_periods = ['hourly', 'daily', 'weekly', 'monthly']
+    if period not in valid_periods:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid period. Must be one of: {valid_periods}"
+        )
+    
+    try:
+        from .analytics import AggregationPeriod
+        from datetime import datetime, timedelta
+        
+        period_enum = AggregationPeriod(period)
+        end_time = datetime.now()
+        start_time = end_time - timedelta(days=days)
+        
+        analytics = get_analytics()
+        data = analytics.get_aggregated_data(
+            data_type=data_type,
+            period=period_enum,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit
+        )
+        
+        return {
+            "data_type": data_type,
+            "period": period,
+            "days": days,
+            "count": len(data),
+            "data": data
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Aggregation failed: {str(e)}"
+        )
+
+
+@app.get("/api/analytics/statistics/{data_type}")
+async def get_data_statistics(
+    data_type: str,
+    days: int = 7
+) -> Dict[str, object]:
+    """
+    Get comprehensive statistics for sensor data.
+    
+    Args:
+        data_type: Type of data ('greenery' or 'noise')
+        days: Number of days to analyze (default: 7)
+    
+    Returns:
+        Dictionary with statistical metrics (avg, min, max, stddev, median, mode, range)
+    """
+    valid_types = ['greenery', 'noise']
+    if data_type not in valid_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid data_type. Must be one of: {valid_types}"
+        )
+    
+    try:
+        from datetime import datetime, timedelta
+        
+        end_time = datetime.now()
+        start_time = end_time - timedelta(days=days)
+        
+        analytics = get_analytics()
+        stats = analytics.calculate_statistics(
+            data_type=data_type,
+            start_time=start_time,
+            end_time=end_time
+        )
+        
+        return {
+            "data_type": data_type,
+            "days": days,
+            "statistics": stats
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Statistics calculation failed: {str(e)}"
+        )
+
+
+@app.get("/api/analytics/trends/{data_type}")
+async def get_trend_analysis(
+    data_type: str,
+    period: str = "daily",
+    days: int = 7
+) -> Dict[str, object]:
+    """
+    Detect trends in sensor data over time.
+    
+    Args:
+        data_type: Type of data ('greenery' or 'noise')
+        period: Aggregation period for analysis ('hourly', 'daily', 'weekly')
+        days: Number of days to analyze (default: 7)
+    
+    Returns:
+        Trend analysis with direction, slope, confidence, and change percentage
+    """
+    valid_types = ['greenery', 'noise']
+    if data_type not in valid_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid data_type. Must be one of: {valid_types}"
+        )
+    
+    valid_periods = ['hourly', 'daily', 'weekly']
+    if period not in valid_periods:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid period. Must be one of: {valid_periods}"
+        )
+    
+    try:
+        from .analytics import AggregationPeriod
+        
+        period_enum = AggregationPeriod(period)
+        
+        analytics = get_analytics()
+        trends = analytics.detect_trends(
+            data_type=data_type,
+            period=period_enum,
+            days=days
+        )
+        
+        return {
+            "data_type": data_type,
+            "period": period,
+            "days": days,
+            "trends": trends
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Trend detection failed: {str(e)}"
+        )
+
+
+@app.get("/api/analytics/anomalies/{data_type}")
+async def get_anomaly_detection(
+    data_type: str,
+    days: int = 7,
+    threshold: float = 2.0
+) -> Dict[str, object]:
+    """
+    Detect anomalous data points that deviate significantly from normal.
+    
+    Args:
+        data_type: Type of data ('greenery' or 'noise')
+        days: Number of days to analyze (default: 7)
+        threshold: Number of standard deviations for anomaly threshold (default: 2.0)
+    
+    Returns:
+        List of anomalous data points with z-scores and severity
+    """
+    valid_types = ['greenery', 'noise']
+    if data_type not in valid_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid data_type. Must be one of: {valid_types}"
+        )
+    
+    try:
+        analytics = get_analytics()
+        anomalies = analytics.detect_anomalies(
+            data_type=data_type,
+            days=days,
+            threshold_stddev=threshold
+        )
+        
+        return {
+            "data_type": data_type,
+            "days": days,
+            "threshold_stddev": threshold,
+            "count": len(anomalies),
+            "anomalies": anomalies
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Anomaly detection failed: {str(e)}"
+        )
+
+
+@app.get("/api/analytics/correlation")
+async def get_correlation_analysis(
+    days: int = 7
+) -> Dict[str, object]:
+    """
+    Calculate correlation between greenery and noise levels.
+    
+    Args:
+        days: Number of days to analyze (default: 7)
+    
+    Returns:
+        Correlation coefficient, strength, and interpretation
+    """
+    try:
+        analytics = get_analytics()
+        correlation = analytics.get_correlation(days=days)
+        
+        return {
+            "days": days,
+            "correlation": correlation
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Correlation analysis failed: {str(e)}"
+        )
+
+
 if __name__ == "__main__":
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
