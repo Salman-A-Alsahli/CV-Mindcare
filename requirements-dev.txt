@@ -1,0 +1,19 @@
+# CV-Mindcare Development Requirements
+# Dependencies for development, testing, and code quality
+
+# Install with: pip install -r requirements-dev.txt
+
+# Testing
+pytest
+pytest-cov
+pytest-asyncio
+pytest-mock
+
+# Code Quality
+black
+flake8
+mypy
+pre-commit
+
+# Build & Packaging
+pyinstaller

@@ -1,0 +1,27 @@
+# CV-Mindcare Base Requirements
+# Core dependencies for running the application without ML features
+
+# Core Processing
+numpy
+pandas
+scipy
+
+# Backend API
+fastapi
+uvicorn[standard]
+websockets
+psutil
+pydantic
+
+# Database
+sqlalchemy
+
+# Launcher GUI
+customtkinter
+pystray
+Pillow
+packaging
+
+# HTTP Client
+requests
+httpx

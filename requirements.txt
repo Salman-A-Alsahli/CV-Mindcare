@@ -1,41 +1,24 @@
-# Core Dependencies
-numpy
-sounddevice
-opencv-python
-deepface
-requests
-transformers
-torch
-accelerate
-safetensors
-pandas
-scipy
+# CV-Mindcare Requirements
+# 
+# This project has modular dependencies to reduce installation size and complexity.
+# Choose the appropriate installation based on your needs:
+#
+# 1. Base Installation (Required - ~500MB):
+#    pip install -r requirements-base.txt
+#
+# 2. ML/AI Features (Optional - ~2GB additional):
+#    pip install -r requirements-ml.txt
+#
+# 3. Development Tools (Optional):
+#    pip install -r requirements-dev.txt
+#
+# Full Installation (all features):
+#    pip install -r requirements-base.txt -r requirements-ml.txt -r requirements-dev.txt
+#
+# Or install this file for backward compatibility (includes everything):
+#    pip install -r requirements.txt
 
-# Backend
-fastapi
-uvicorn[standard]
-psutil
-pydantic
-
-# Launcher GUI
-customtkinter
-pystray
-Pillow
-packaging
-
-# Database
-sqlalchemy
-
-# Development Dependencies (optional)
-pytest
-pytest-cov
-pytest-mock
-black
-flake8
-pre-commit
-
-# Testing HTTP
-httpx
-
-# Build & Packaging
-pyinstaller
+# Include all requirements (backward compatibility)
+-r requirements-base.txt
+-r requirements-ml.txt
+-r requirements-dev.txt

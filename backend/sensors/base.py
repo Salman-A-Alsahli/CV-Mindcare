@@ -1,9 +1,44 @@
 """
-Base class for all sensor implementations.
+Base class for all sensor implementations (Phase 2: Sensor Infrastructure).
 
-This module provides an abstract base class that defines the common interface
-for all sensor types (camera, microphone, etc.). It handles status management,
-error handling, and configuration.
+This module provides a robust abstract base class that defines the common interface
+for all sensor types (camera, microphone, etc.) with comprehensive status management,
+error handling, and automatic mock mode fallback for development without hardware.
+
+Key Features:
+- Status management: INACTIVE, AVAILABLE, ACTIVE, ERROR, UNAVAILABLE, MOCK_MODE
+- Automatic fallback to mock mode when hardware unavailable
+- Standardized error handling and logging
+- Configuration management
+- Hardware detection
+- Graceful degradation
+
+Usage:
+    class MyCameraSensor(BaseSensor):
+        def __init__(self, config=None):
+            super().__init__("My Camera", "camera", config)
+        
+        def initialize(self) -> bool:
+            # Initialize real hardware
+            return True
+        
+        def capture(self) -> Dict[str, Any]:
+            # Capture real data
+            return {"timestamp": datetime.now().isoformat(), ...}
+        
+        def capture_mock_data(self) -> Dict[str, Any]:
+            # Generate mock data
+            return {"timestamp": datetime.now().isoformat(), ...}
+        
+        def cleanup(self) -> bool:
+            # Clean up resources
+            return True
+        
+        def check_hardware_available(self) -> bool:
+            # Check if camera exists
+            return os.path.exists("/dev/video0")
+
+Optimized for Raspberry Pi 5 deployment with graceful hardware detection.
 """
 
 from abc import ABC, abstractmethod
@@ -17,10 +52,12 @@ logger = logging.getLogger(__name__)
 
 class SensorStatus(Enum):
     """Sensor status enumeration."""
-    INACTIVE = "inactive"  # Sensor not started
-    ACTIVE = "active"      # Sensor running normally
-    ERROR = "error"        # Sensor encountered an error
+    INACTIVE = "inactive"      # Sensor not started
+    AVAILABLE = "available"    # Hardware available but not started
+    ACTIVE = "active"          # Sensor running normally
+    ERROR = "error"            # Sensor encountered an error
     UNAVAILABLE = "unavailable"  # Hardware not available
+    MOCK_MODE = "mock_mode"    # Running in mock/simulation mode
 
 
 class SensorError(Exception):
@@ -51,6 +88,7 @@ class BaseSensor(ABC):
         status: Current sensor status
         config: Sensor configuration dictionary
         error_message: Last error message if status is ERROR
+        mock_mode: Whether sensor is running in mock/simulation mode
     """
     
     def __init__(self, name: str, sensor_type: str, config: Optional[Dict[str, Any]] = None):
@@ -61,15 +99,18 @@ class BaseSensor(ABC):
             name: Human-readable sensor name
             sensor_type: Type identifier (camera, microphone, etc.)
             config: Optional configuration dictionary
+                - 'mock_mode' (bool): Enable mock/simulation mode (default: False)
+                - Other sensor-specific configuration options
         """
         self.name = name
         self.sensor_type = sensor_type
         self.config = config or {}
         self.status = SensorStatus.INACTIVE
         self.error_message: Optional[str] = None
+        self.mock_mode = self.config.get('mock_mode', False)
         self._start_time: Optional[datetime] = None
         
-        logger.info(f"Initialized {self.name} ({self.sensor_type})")
+        logger.info(f"Initialized {self.name} ({self.sensor_type}, mock_mode={self.mock_mode})")
     
     @abstractmethod
     def initialize(self) -> bool:
@@ -126,41 +167,100 @@ class BaseSensor(ABC):
         """
         pass
     
+    @abstractmethod
+    def capture_mock_data(self) -> Dict[str, Any]:
+        """
+        Generate mock/simulated sensor data.
+        
+        This method must be implemented to provide realistic fake data
+        when hardware is unavailable or when mock_mode is enabled.
+        Essential for development and testing without physical hardware.
+        
+        Returns:
+            Dict containing mock sensor data in same format as capture()
+        """
+        pass
+    
+    def check_hardware_available(self) -> bool:
+        """
+        Check if sensor hardware is physically available.
+        
+        Override this method to implement hardware detection logic.
+        Default implementation returns True (assumes hardware present).
+        
+        Returns:
+            bool: True if hardware is detected and accessible
+        """
+        return True
+    
     def start(self) -> bool:
         """
         Start the sensor.
         
+        Automatically falls back to mock mode if hardware is unavailable.
+        
         Returns:
-            bool: True if started successfully, False otherwise
+            bool: True if started successfully (real or mock mode), False otherwise
         """
         try:
-            if self.status == SensorStatus.ACTIVE:
+            if self.status == SensorStatus.ACTIVE or self.status == SensorStatus.MOCK_MODE:
                 logger.warning(f"{self.name} is already active")
                 return True
             
-            logger.info(f"Starting {self.name}...")
+            # Check if mock mode is explicitly requested
+            if self.mock_mode:
+                logger.info(f"Starting {self.name} in MOCK_MODE (explicitly requested)")
+                self.status = SensorStatus.MOCK_MODE
+                self._start_time = datetime.now()
+                logger.info(f"{self.name} started successfully in mock mode")
+                return True
+            
+            # Check hardware availability
+            if not self.check_hardware_available():
+                logger.warning(f"{self.name} hardware not available, falling back to MOCK_MODE")
+                self.status = SensorStatus.MOCK_MODE
+                self.mock_mode = True
+                self._start_time = datetime.now()
+                return True
+            
+            # Try to initialize real hardware
+            logger.info(f"Starting {self.name} with real hardware...")
             if self.initialize():
                 self.status = SensorStatus.ACTIVE
                 self._start_time = datetime.now()
                 logger.info(f"{self.name} started successfully")
                 return True
             else:
-                self.status = SensorStatus.ERROR
-                self.error_message = "Initialization failed"
-                logger.error(f"{self.name} failed to start")
-                return False
+                # Initialization failed, fall back to mock mode
+                logger.warning(f"{self.name} initialization failed, falling back to MOCK_MODE")
+                self.status = SensorStatus.MOCK_MODE
+                self.mock_mode = True
+                self._start_time = datetime.now()
+                return True
                 
         except SensorUnavailableError as e:
-            self.status = SensorStatus.UNAVAILABLE
-            self.error_message = str(e)
-            logger.error(f"{self.name} hardware unavailable: {e}")
-            return False
+            # Hardware explicitly unavailable, use mock mode
+            logger.warning(f"{self.name} hardware unavailable: {e}, using MOCK_MODE")
+            self.status = SensorStatus.MOCK_MODE
+            self.mock_mode = True
+            self.error_message = None  # Clear error since we're in mock mode
+            self._start_time = datetime.now()
+            return True
             
         except Exception as e:
-            self.status = SensorStatus.ERROR
-            self.error_message = str(e)
-            logger.error(f"{self.name} error during start: {e}", exc_info=True)
-            return False
+            # Unexpected error, try mock mode as last resort
+            logger.error(f"{self.name} error during start: {e}, attempting MOCK_MODE", exc_info=True)
+            try:
+                self.status = SensorStatus.MOCK_MODE
+                self.mock_mode = True
+                self.error_message = f"Hardware error (using mock mode): {str(e)}"
+                self._start_time = datetime.now()
+                return True
+            except Exception as fallback_error:
+                self.status = SensorStatus.ERROR
+                self.error_message = str(e)
+                logger.error(f"{self.name} failed to start even in mock mode: {fallback_error}")
+                return False
     
     def stop(self) -> bool:
         """
@@ -190,6 +290,45 @@ class BaseSensor(ABC):
             logger.error(f"{self.name} error during stop: {e}", exc_info=True)
             return False
     
+    def read(self) -> Dict[str, Any]:
+        """
+        Read data from the sensor (real or mock).
+        
+        Automatically uses capture() for real hardware or capture_mock_data()
+        for mock mode. This is the main method to call for getting sensor data.
+        
+        Returns:
+            Dict containing sensor data
+        
+        Raises:
+            SensorError: If sensor is not active
+        """
+        if self.status == SensorStatus.INACTIVE:
+            raise SensorError(f"{self.name} is not active. Call start() first.")
+        
+        if self.status == SensorStatus.ERROR:
+            raise SensorError(f"{self.name} is in error state: {self.error_message}")
+        
+        if self.status == SensorStatus.UNAVAILABLE:
+            raise SensorError(f"{self.name} hardware is unavailable")
+        
+        try:
+            if self.status == SensorStatus.MOCK_MODE or self.mock_mode:
+                # Use mock data
+                data = self.capture_mock_data()
+                data['mock_mode'] = True
+                return data
+            else:
+                # Use real hardware
+                data = self.capture()
+                data['mock_mode'] = False
+                return data
+        except Exception as e:
+            self.status = SensorStatus.ERROR
+            self.error_message = str(e)
+            logger.error(f"{self.name} capture error: {e}", exc_info=True)
+            raise SensorError(f"Failed to read from {self.name}: {e}")
+    
     def get_status(self) -> Dict[str, Any]:
         """
         Get current sensor status.
@@ -200,6 +339,7 @@ class BaseSensor(ABC):
                 - type: Sensor type
                 - status: Current status
                 - active: Whether sensor is active
+                - mock_mode: Whether running in mock mode
                 - error_message: Error message if status is ERROR
                 - uptime_seconds: Seconds since start (if active)
                 - config: Current configuration
@@ -208,12 +348,13 @@ class BaseSensor(ABC):
             "name": self.name,
             "type": self.sensor_type,
             "status": self.status.value,
-            "active": self.status == SensorStatus.ACTIVE,
+            "active": self.status in [SensorStatus.ACTIVE, SensorStatus.MOCK_MODE],
+            "mock_mode": self.mock_mode or self.status == SensorStatus.MOCK_MODE,
             "error_message": self.error_message,
             "config": self.config
         }
         
-        if self._start_time and self.status == SensorStatus.ACTIVE:
+        if self._start_time and self.status in [SensorStatus.ACTIVE, SensorStatus.MOCK_MODE]:
             uptime = (datetime.now() - self._start_time).total_seconds()
             result["uptime_seconds"] = uptime
         else:
@@ -232,12 +373,12 @@ class BaseSensor(ABC):
     
     def is_active(self) -> bool:
         """
-        Check if sensor is currently active.
+        Check if sensor is currently active (real or mock mode).
         
         Returns:
             bool: True if sensor is active and capturing data
         """
-        return self.status == SensorStatus.ACTIVE
+        return self.status in [SensorStatus.ACTIVE, SensorStatus.MOCK_MODE]
     
     def update_config(self, config: Dict[str, Any]) -> bool:
         """

@@ -20,8 +20,15 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "online"
-        assert data["version"] == "0.1.0"
+        assert data["version"] == "0.2.0"
         assert data["name"] == "CV-Mindcare API"
+    
+    def test_health_endpoint(self):
+        """Test GET /api/health returns ok status."""
+        response = client.get("/api/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "ok"
 
 
 class TestSensorsEndpoints:
@@ -165,6 +172,295 @@ class TestControlEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == "data collection stop requested"
+
+
+class TestCameraEndpoints:
+    """Tests for camera sensor endpoints (Phase 3)."""
+    
+    def test_get_camera_status(self):
+        """Test GET /api/sensors/camera/status."""
+        response = client.get("/api/sensors/camera/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert "sensor_type" in data
+        assert data["sensor_type"] == "camera"
+        assert "available" in data
+        assert "status" in data
+    
+    def test_capture_camera_data(self):
+        """Test GET /api/sensors/camera/capture."""
+        response = client.get("/api/sensors/camera/capture")
+        assert response.status_code == 200
+        data = response.json()
+        assert "timestamp" in data
+        assert "sensor_type" in data
+        assert data["sensor_type"] == "camera"
+        assert "greenery_percentage" in data
+        assert 0 <= data["greenery_percentage"] <= 100
+        assert "mock_mode" in data
+    
+    def test_post_greenery_data(self):
+        """Test POST /api/sensors/camera/greenery."""
+        response = client.post("/api/sensors/camera/greenery?greenery_percentage=25.5")
+        assert response.status_code == 201
+        data = response.json()
+        assert "message" in data
+    
+    def test_post_greenery_data_invalid_low(self):
+        """Test POST /api/sensors/camera/greenery with invalid low value."""
+        response = client.post("/api/sensors/camera/greenery?greenery_percentage=-5")
+        assert response.status_code == 400
+    
+    def test_post_greenery_data_invalid_high(self):
+        """Test POST /api/sensors/camera/greenery with invalid high value."""
+        response = client.post("/api/sensors/camera/greenery?greenery_percentage=105")
+        assert response.status_code == 400
+
+
+class TestMicrophoneEndpoints:
+    """Tests for microphone sensor endpoints (Phase 4)."""
+    
+    def test_get_microphone_status(self):
+        """Test GET /api/sensors/microphone/status."""
+        response = client.get("/api/sensors/microphone/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert "sensor_type" in data
+        assert data["sensor_type"] == "microphone"
+        assert "available" in data
+        assert "status" in data
+    
+    def test_capture_microphone_data(self):
+        """Test GET /api/sensors/microphone/capture."""
+        response = client.get("/api/sensors/microphone/capture")
+        assert response.status_code == 200
+        data = response.json()
+        assert "timestamp" in data
+        assert "sensor_type" in data
+        assert data["sensor_type"] == "microphone"
+        assert "db_level" in data
+        assert 0 <= data["db_level"] <= 100
+        assert "noise_classification" in data
+        assert "mock_mode" in data
+    
+    def test_capture_microphone_data_custom_duration(self):
+        """Test GET /api/sensors/microphone/capture with custom duration."""
+        response = client.get("/api/sensors/microphone/capture?duration=0.5")
+        assert response.status_code == 200
+        data = response.json()
+        assert "sample_duration" in data
+        assert data["sample_duration"] == 0.5
+    
+    def test_post_noise_data(self):
+        """Test POST /api/sensors/microphone/noise."""
+        response = client.post("/api/sensors/microphone/noise?db_level=45.0")
+        assert response.status_code == 201
+        data = response.json()
+        assert "message" in data
+    
+    def test_post_noise_data_invalid_low(self):
+        """Test POST /api/sensors/microphone/noise with invalid low value."""
+        response = client.post("/api/sensors/microphone/noise?db_level=-5")
+        assert response.status_code == 400
+    
+    def test_post_noise_data_invalid_high(self):
+        """Test POST /api/sensors/microphone/noise with invalid high value."""
+        response = client.post("/api/sensors/microphone/noise?db_level=105")
+        assert response.status_code == 400
+
+
+class TestSensorManagerEndpoints:
+    """Tests for sensor manager endpoints (Phase 5)."""
+    
+    def test_get_manager_status(self):
+        """Test GET /api/sensors/manager/status returns status."""
+        response = client.get("/api/sensors/manager/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert "manager" in data
+        assert "sensors" in data
+        assert "timestamp" in data
+        assert "camera" in data["sensors"]
+        assert "microphone" in data["sensors"]
+    
+    def test_start_manager(self):
+        """Test POST /api/sensors/manager/start starts manager."""
+        response = client.post("/api/sensors/manager/start")
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+        assert "status" in data
+        
+        # Stop after test
+        client.post("/api/sensors/manager/stop")
+    
+    def test_stop_manager(self):
+        """Test POST /api/sensors/manager/stop stops manager."""
+        # Start first
+        client.post("/api/sensors/manager/start")
+        
+        response = client.post("/api/sensors/manager/stop")
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+        assert "success" in data
+        assert "status" in data
+    
+    def test_get_manager_health(self):
+        """Test GET /api/sensors/manager/health returns health info."""
+        response = client.get("/api/sensors/manager/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert "health_score" in data
+        assert "status" in data
+        assert "issues" in data
+        assert "manager" in data
+        assert "sensors" in data
+        assert 0 <= data["health_score"] <= 100
+    
+    def test_update_manager_config(self):
+        """Test PUT /api/sensors/manager/config updates configuration."""
+        payload = {
+            "polling_interval": 3.0,
+            "auto_recover": False
+        }
+        response = client.put("/api/sensors/manager/config", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+        assert "config" in data
+        assert "status" in data
+        assert data["config"]["polling_interval"] == 3.0
+    
+    def test_update_manager_config_partial(self):
+        """Test PUT /api/sensors/manager/config with partial update."""
+        payload = {"max_retries": 5}
+        response = client.put("/api/sensors/manager/config", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["config"]["max_retries"] == 5
+
+
+class TestAnalyticsAPI:
+    """Test analytics API endpoints (Phase 7)."""
+    
+    def test_get_aggregated_greenery_data(self):
+        """Test GET /api/analytics/aggregate/greenery returns aggregated data."""
+        response = client.get("/api/analytics/aggregate/greenery?period=hourly&days=1")
+        assert response.status_code == 200
+        data = response.json()
+        assert "data_type" in data
+        assert "period" in data
+        assert "days" in data
+        assert "count" in data
+        assert "data" in data
+        assert data["data_type"] == "greenery"
+        assert data["period"] == "hourly"
+        assert isinstance(data["data"], list)
+    
+    def test_get_aggregated_noise_data(self):
+        """Test GET /api/analytics/aggregate/noise returns aggregated data."""
+        response = client.get("/api/analytics/aggregate/noise?period=daily&days=7")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data_type"] == "noise"
+        assert data["period"] == "daily"
+        assert data["days"] == 7
+    
+    def test_get_aggregated_invalid_type(self):
+        """Test aggregation with invalid data type returns 400."""
+        response = client.get("/api/analytics/aggregate/invalid")
+        assert response.status_code == 400
+    
+    def test_get_aggregated_invalid_period(self):
+        """Test aggregation with invalid period returns 400."""
+        response = client.get("/api/analytics/aggregate/greenery?period=invalid")
+        assert response.status_code == 400
+    
+    def test_get_statistics_greenery(self):
+        """Test GET /api/analytics/statistics/greenery returns statistics."""
+        response = client.get("/api/analytics/statistics/greenery?days=7")
+        assert response.status_code == 200
+        data = response.json()
+        assert "data_type" in data
+        assert "days" in data
+        assert "statistics" in data
+        
+        stats = data["statistics"]
+        assert "count" in stats
+        assert "avg" in stats
+        assert "min" in stats
+        assert "max" in stats
+        assert "stddev" in stats
+        assert "median" in stats
+        assert "range" in stats
+    
+    def test_get_statistics_noise(self):
+        """Test GET /api/analytics/statistics/noise returns statistics."""
+        response = client.get("/api/analytics/statistics/noise?days=14")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data_type"] == "noise"
+        assert data["days"] == 14
+    
+    def test_get_statistics_invalid_type(self):
+        """Test statistics with invalid data type returns 400."""
+        response = client.get("/api/analytics/statistics/invalid")
+        assert response.status_code == 400
+    
+    def test_get_trends(self):
+        """Test GET /api/analytics/trends/greenery returns trend analysis."""
+        response = client.get("/api/analytics/trends/greenery?period=daily&days=7")
+        assert response.status_code == 200
+        data = response.json()
+        assert "data_type" in data
+        assert "period" in data
+        assert "days" in data
+        assert "trends" in data
+        
+        trends = data["trends"]
+        assert "direction" in trends
+        assert "slope" in trends
+        assert "confidence" in trends
+        assert "change_percent" in trends
+        assert trends["direction"] in ["increasing", "decreasing", "stable"]
+    
+    def test_get_trends_invalid_period(self):
+        """Test trends with invalid period returns 400."""
+        response = client.get("/api/analytics/trends/greenery?period=invalid")
+        assert response.status_code == 400
+    
+    def test_get_anomalies(self):
+        """Test GET /api/analytics/anomalies/greenery returns anomaly detection."""
+        response = client.get("/api/analytics/anomalies/greenery?days=7&threshold=2.0")
+        assert response.status_code == 200
+        data = response.json()
+        assert "data_type" in data
+        assert "days" in data
+        assert "threshold_stddev" in data
+        assert "count" in data
+        assert "anomalies" in data
+        assert isinstance(data["anomalies"], list)
+    
+    def test_get_anomalies_noise(self):
+        """Test anomaly detection for noise data."""
+        response = client.get("/api/analytics/anomalies/noise?days=3")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data_type"] == "noise"
+    
+    def test_get_correlation(self):
+        """Test GET /api/analytics/correlation returns correlation analysis."""
+        response = client.get("/api/analytics/correlation?days=7")
+        assert response.status_code == 200
+        data = response.json()
+        assert "days" in data
+        assert "correlation" in data
+        
+        corr = data["correlation"]
+        assert "coefficient" in corr
+        assert "strength" in corr
+        assert "direction" in corr
 
 
 if __name__ == "__main__":

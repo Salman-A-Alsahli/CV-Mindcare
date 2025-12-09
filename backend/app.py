@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Dict, Optional
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, status, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -24,7 +24,7 @@ from .database import (
 app = FastAPI(
     title="CV-Mindcare API",
     description="Backend API for CV-Mindcare system",
-    version="0.1.0",
+    version="0.2.0",
 )
 
 app.add_middleware(
@@ -61,9 +61,15 @@ async def startup() -> None:
 async def root() -> Dict[str, str]:
     return {
         "status": "online",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "name": "CV-Mindcare API",
     }
+
+
+@app.get("/api/health")
+async def health() -> Dict[str, str]:
+    """Health check endpoint for monitoring and load balancers."""
+    return {"status": "ok"}
 
 
 @app.get("/api/sensors")
@@ -150,7 +156,7 @@ async def get_live() -> Dict[str, object]:
     return {
         "faces_detected": face["faces_detected"],
         "avg_db": sound["avg_db"],
-    "dominant_emotion": dominant_emotion,
+        "dominant_emotion": dominant_emotion,
         "avg_green_pct": next(
             (record["value"] for record in recent if record["sensor_type"].lower() == "greenery"),
             0.0,
@@ -164,6 +170,667 @@ async def get_live() -> Dict[str, object]:
 @app.post("/api/control/stop")
 async def stop_collection() -> Dict[str, str]:
     return {"message": "data collection stop requested"}
+
+
+# Camera Sensor Endpoints (Phase 3)
+
+@app.get("/api/sensors/camera/status")
+async def get_camera_status() -> Dict[str, object]:
+    """
+    Get camera sensor status.
+    
+    Returns sensor availability and configuration information.
+    """
+    try:
+        from .sensors.camera_sensor import check_camera_available
+        available = check_camera_available()
+        return {
+            "sensor_type": "camera",
+            "available": available,
+            "backend": "opencv",
+            "status": "available" if available else "unavailable",
+        }
+    except Exception as e:
+        return {
+            "sensor_type": "camera",
+            "available": False,
+            "status": "error",
+            "error": str(e),
+        }
+
+
+@app.get("/api/sensors/camera/capture")
+async def capture_camera_data() -> Dict[str, object]:
+    """
+    Capture camera data with greenery detection.
+    
+    Returns greenery percentage and analysis metadata.
+    Automatically falls back to mock mode if hardware unavailable.
+    """
+    try:
+        from .sensors.camera_sensor import get_camera_reading
+        data = get_camera_reading()
+        
+        # Store greenery data in database
+        if not data.get('mock_mode', False):
+            greenery_pct = data.get('greenery_percentage', 0.0)
+            insert_sensor_data("greenery", greenery_pct)
+        
+        return data
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Camera capture failed: {str(e)}"
+        )
+
+
+@app.post("/api/sensors/camera/greenery", status_code=status.HTTP_201_CREATED)
+async def post_greenery_data(greenery_percentage: float) -> Dict[str, str]:
+    """
+    Manually submit greenery detection data.
+    
+    Args:
+        greenery_percentage: Percentage of green pixels (0-100)
+    
+    Returns:
+        Confirmation message
+    """
+    if not 0 <= greenery_percentage <= 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Greenery percentage must be between 0 and 100"
+        )
+    
+    insert_sensor_data("greenery", greenery_percentage)
+    return {"message": "greenery data recorded"}
+
+
+# Microphone Sensor Endpoints (Phase 4)
+
+@app.get("/api/sensors/microphone/status")
+async def get_microphone_status() -> Dict[str, object]:
+    """
+    Get microphone sensor status.
+    
+    Returns sensor availability and configuration information.
+    """
+    try:
+        from .sensors.microphone_sensor import check_microphone_available
+        available = check_microphone_available()
+        return {
+            "sensor_type": "microphone",
+            "available": available,
+            "backend": "sounddevice",
+            "status": "available" if available else "unavailable",
+        }
+    except Exception as e:
+        return {
+            "sensor_type": "microphone",
+            "available": False,
+            "status": "error",
+            "error": str(e),
+        }
+
+
+@app.get("/api/sensors/microphone/capture")
+async def capture_microphone_data(duration: float = 1.0) -> Dict[str, object]:
+    """
+    Capture microphone data with noise level analysis.
+    
+    Args:
+        duration: Sample duration in seconds (default: 1.0)
+    
+    Returns noise level analysis including dB level and classification.
+    Automatically falls back to mock mode if hardware unavailable.
+    """
+    try:
+        from .sensors.microphone_sensor import get_microphone_reading
+        data = get_microphone_reading(duration=duration)
+        
+        # Store noise data in database
+        if not data.get('mock_mode', False):
+            db_level = data.get('db_level', 0.0)
+            insert_sensor_data("noise", db_level)
+        
+        return data
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Microphone capture failed: {str(e)}"
+        )
+
+
+@app.post("/api/sensors/microphone/noise", status_code=status.HTTP_201_CREATED)
+async def post_noise_data(db_level: float) -> Dict[str, str]:
+    """
+    Manually submit noise level data.
+    
+    Args:
+        db_level: Noise level in dB (0-100 normalized)
+    
+    Returns:
+        Confirmation message
+    """
+    if not 0 <= db_level <= 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Noise level must be between 0 and 100"
+        )
+    
+    insert_sensor_data("noise", db_level)
+    return {"message": "noise data recorded"}
+
+
+@app.get("/api/context")
+async def get_context(days: int = 30) -> Dict[str, object]:
+    """Get context payload combining current readings with historical summary.
+    
+    Args:
+        days: Number of days of history to analyze (default: 30)
+        
+    Returns:
+        Dict containing current_readings and historical_summary
+    """
+    # Get current live data
+    live_data = await get_live()
+    
+    # Get historical data from database
+    recent_data = get_recent_sensor_data(limit=100)
+    
+    # Calculate basic statistics from recent data
+    emotions = {}
+    noise_levels = []
+    greenery_levels = []
+    
+    for record in recent_data:
+        sensor_type = record.get("sensor_type", "").lower()
+        value = record.get("value", 0)
+        
+        if "emotion" in sensor_type:
+            emotion_name = sensor_type.replace("emotion_", "").replace("emotion", "neutral")
+            emotions[emotion_name] = emotions.get(emotion_name, 0) + 1
+        elif sensor_type == "noise" or sensor_type == "sound":
+            noise_levels.append(value)
+        elif sensor_type == "greenery":
+            greenery_levels.append(value)
+    
+    # Determine most frequent emotion
+    most_frequent_emotion = max(emotions.items(), key=lambda x: x[1])[0] if emotions else "neutral"
+    
+    # Calculate average noise level
+    avg_noise = sum(noise_levels) / len(noise_levels) if noise_levels else live_data.get("avg_db", 0)
+    
+    # Categorize noise time (simplified - would need timestamp analysis for full implementation)
+    noise_category = "quiet" if avg_noise < 50 else "moderate" if avg_noise < 70 else "loud"
+    
+    historical_summary = {
+        "most_frequent_emotion": most_frequent_emotion,
+        "noisiest_time_of_day": noise_category,
+        "avg_noise_level": round(avg_noise, 2),
+        "avg_greenery": round(sum(greenery_levels) / len(greenery_levels), 2) if greenery_levels else 0.0,
+        "data_points": len(recent_data),
+    }
+    
+    return {
+        "current_readings": {
+            "dominant_emotion": live_data.get("dominant_emotion"),
+            "avg_db": live_data.get("avg_db"),
+            "avg_green_pct": live_data.get("avg_green_pct"),
+            "faces_detected": live_data.get("faces_detected"),
+            "last_updated": live_data.get("last_updated"),
+        },
+        "historical_summary": historical_summary,
+    }
+
+
+# Sensor Manager Endpoints (Phase 5)
+_sensor_manager = None
+
+
+def get_sensor_manager():
+    """Get or create the global sensor manager instance."""
+    global _sensor_manager
+    if _sensor_manager is None:
+        from .sensors.sensor_manager import SensorManager
+        _sensor_manager = SensorManager(config={
+            'polling_interval': 5.0,
+            'auto_start': False,  # Manual start via API
+            'auto_recover': True,
+            'max_retries': 3
+        })
+    return _sensor_manager
+
+
+@app.get("/api/sensors/manager/status")
+async def get_manager_status() -> Dict[str, object]:
+    """
+    Get sensor manager status.
+    
+    Returns:
+        Status of manager and all managed sensors
+    """
+    try:
+        manager = get_sensor_manager()
+        return manager.get_all_status()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get manager status: {str(e)}"
+        )
+
+
+@app.post("/api/sensors/manager/start", status_code=status.HTTP_200_OK)
+async def start_manager() -> Dict[str, object]:
+    """
+    Start sensor manager and all sensors.
+    
+    Returns:
+        Status after starting
+    """
+    try:
+        manager = get_sensor_manager()
+        success = manager.start_all()
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to start any sensors"
+            )
+        
+        return {
+            "message": "Sensor manager started",
+            "status": manager.get_all_status()
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to start manager: {str(e)}"
+        )
+
+
+@app.post("/api/sensors/manager/stop", status_code=status.HTTP_200_OK)
+async def stop_manager() -> Dict[str, object]:
+    """
+    Stop sensor manager and all sensors.
+    
+    Returns:
+        Status after stopping
+    """
+    try:
+        manager = get_sensor_manager()
+        success = manager.stop_all()
+        
+        return {
+            "message": "Sensor manager stopped",
+            "success": success,
+            "status": manager.get_all_status()
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to stop manager: {str(e)}"
+        )
+
+
+@app.get("/api/sensors/manager/health")
+async def get_manager_health() -> Dict[str, object]:
+    """
+    Get sensor manager health metrics.
+    
+    Returns:
+        Detailed health information with scores and diagnostics
+    """
+    try:
+        manager = get_sensor_manager()
+        return manager.get_health()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get manager health: {str(e)}"
+        )
+
+
+class ManagerConfig(BaseModel):
+    """Configuration model for sensor manager."""
+    polling_interval: Optional[float] = None
+    auto_recover: Optional[bool] = None
+    max_retries: Optional[int] = None
+
+
+@app.put("/api/sensors/manager/config", status_code=status.HTTP_200_OK)
+async def update_manager_config(config: ManagerConfig) -> Dict[str, object]:
+    """
+    Update sensor manager configuration.
+    
+    Args:
+        config: New configuration values
+    
+    Returns:
+        Updated configuration and status
+    """
+    try:
+        manager = get_sensor_manager()
+        config_dict = config.model_dump(exclude_none=True)
+        
+        success = manager.update_config(config_dict)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to update configuration"
+            )
+        
+        return {
+            "message": "Configuration updated",
+            "config": config_dict,
+            "status": manager.get_all_status()
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update config: {str(e)}"
+        )
+
+
+# WebSocket Endpoints (Phase 6)
+
+@app.websocket("/ws/live")
+async def websocket_live_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time sensor data streaming.
+    
+    Endpoint: ws://localhost:8000/ws/live
+    
+    Features:
+    - Real-time sensor data push (camera, microphone)
+    - Configurable data rate (1-10 Hz)
+    - System resource monitoring
+    - Automatic reconnection support
+    
+    Message Types:
+    - sensor_data: Periodic sensor readings with timestamp
+    - status: Connection and system status updates
+    - error: Error notifications
+    
+    Client Commands:
+    - set_rate: Update streaming rate in Hz
+    
+    Example:
+        Send: {"command": "set_rate", "rate": 2.0}
+        Receive: {"type": "sensor_data", "timestamp": "...", "sensors": {...}}
+    """
+    from .websocket_routes import websocket_endpoint
+    manager = get_sensor_manager()
+    await websocket_endpoint(websocket, sensor_manager=manager)
+
+
+@app.get("/api/websocket/status")
+async def get_websocket_status() -> Dict[str, object]:
+    """
+    Get WebSocket connection manager status.
+    
+    Returns:
+        Number of active connections and status
+    """
+    from .websocket_routes import manager as ws_manager
+    return ws_manager.get_status()
+
+
+# ============================================================================
+# Analytics Endpoints (Phase 7)
+# ============================================================================
+
+# Global analytics instance
+_analytics = None
+
+def get_analytics():
+    """Get or create analytics instance."""
+    global _analytics
+    if _analytics is None:
+        from .analytics import Analytics
+        _analytics = Analytics()
+    return _analytics
+
+
+@app.get("/api/analytics/aggregate/{data_type}")
+async def get_aggregated_data(
+    data_type: str,
+    period: str = "hourly",
+    days: int = 7,
+    limit: int = 100
+) -> Dict[str, object]:
+    """
+    Get aggregated sensor data by time period.
+    
+    Args:
+        data_type: Type of data ('greenery' or 'noise')
+        period: Aggregation period ('hourly', 'daily', 'weekly', 'monthly')
+        days: Number of days to include (default: 7)
+        limit: Maximum number of aggregated points (default: 100)
+    
+    Returns:
+        List of aggregated data points with timestamp and statistics
+    """
+    valid_types = ['greenery', 'noise']
+    if data_type not in valid_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid data_type. Must be one of: {valid_types}"
+        )
+    
+    valid_periods = ['hourly', 'daily', 'weekly', 'monthly']
+    if period not in valid_periods:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid period. Must be one of: {valid_periods}"
+        )
+    
+    try:
+        from .analytics import AggregationPeriod
+        from datetime import datetime, timedelta
+        
+        period_enum = AggregationPeriod(period)
+        end_time = datetime.now()
+        start_time = end_time - timedelta(days=days)
+        
+        analytics = get_analytics()
+        data = analytics.get_aggregated_data(
+            data_type=data_type,
+            period=period_enum,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit
+        )
+        
+        return {
+            "data_type": data_type,
+            "period": period,
+            "days": days,
+            "count": len(data),
+            "data": data
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Aggregation failed: {str(e)}"
+        )
+
+
+@app.get("/api/analytics/statistics/{data_type}")
+async def get_data_statistics(
+    data_type: str,
+    days: int = 7
+) -> Dict[str, object]:
+    """
+    Get comprehensive statistics for sensor data.
+    
+    Args:
+        data_type: Type of data ('greenery' or 'noise')
+        days: Number of days to analyze (default: 7)
+    
+    Returns:
+        Dictionary with statistical metrics (avg, min, max, stddev, median, mode, range)
+    """
+    valid_types = ['greenery', 'noise']
+    if data_type not in valid_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid data_type. Must be one of: {valid_types}"
+        )
+    
+    try:
+        from datetime import datetime, timedelta
+        
+        end_time = datetime.now()
+        start_time = end_time - timedelta(days=days)
+        
+        analytics = get_analytics()
+        stats = analytics.calculate_statistics(
+            data_type=data_type,
+            start_time=start_time,
+            end_time=end_time
+        )
+        
+        return {
+            "data_type": data_type,
+            "days": days,
+            "statistics": stats
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Statistics calculation failed: {str(e)}"
+        )
+
+
+@app.get("/api/analytics/trends/{data_type}")
+async def get_trend_analysis(
+    data_type: str,
+    period: str = "daily",
+    days: int = 7
+) -> Dict[str, object]:
+    """
+    Detect trends in sensor data over time.
+    
+    Args:
+        data_type: Type of data ('greenery' or 'noise')
+        period: Aggregation period for analysis ('hourly', 'daily', 'weekly')
+        days: Number of days to analyze (default: 7)
+    
+    Returns:
+        Trend analysis with direction, slope, confidence, and change percentage
+    """
+    valid_types = ['greenery', 'noise']
+    if data_type not in valid_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid data_type. Must be one of: {valid_types}"
+        )
+    
+    valid_periods = ['hourly', 'daily', 'weekly']
+    if period not in valid_periods:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid period. Must be one of: {valid_periods}"
+        )
+    
+    try:
+        from .analytics import AggregationPeriod
+        
+        period_enum = AggregationPeriod(period)
+        
+        analytics = get_analytics()
+        trends = analytics.detect_trends(
+            data_type=data_type,
+            period=period_enum,
+            days=days
+        )
+        
+        return {
+            "data_type": data_type,
+            "period": period,
+            "days": days,
+            "trends": trends
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Trend detection failed: {str(e)}"
+        )
+
+
+@app.get("/api/analytics/anomalies/{data_type}")
+async def get_anomaly_detection(
+    data_type: str,
+    days: int = 7,
+    threshold: float = 2.0
+) -> Dict[str, object]:
+    """
+    Detect anomalous data points that deviate significantly from normal.
+    
+    Args:
+        data_type: Type of data ('greenery' or 'noise')
+        days: Number of days to analyze (default: 7)
+        threshold: Number of standard deviations for anomaly threshold (default: 2.0)
+    
+    Returns:
+        List of anomalous data points with z-scores and severity
+    """
+    valid_types = ['greenery', 'noise']
+    if data_type not in valid_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid data_type. Must be one of: {valid_types}"
+        )
+    
+    try:
+        analytics = get_analytics()
+        anomalies = analytics.detect_anomalies(
+            data_type=data_type,
+            days=days,
+            threshold_stddev=threshold
+        )
+        
+        return {
+            "data_type": data_type,
+            "days": days,
+            "threshold_stddev": threshold,
+            "count": len(anomalies),
+            "anomalies": anomalies
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Anomaly detection failed: {str(e)}"
+        )
+
+
+@app.get("/api/analytics/correlation")
+async def get_correlation_analysis(
+    days: int = 7
+) -> Dict[str, object]:
+    """
+    Calculate correlation between greenery and noise levels.
+    
+    Args:
+        days: Number of days to analyze (default: 7)
+    
+    Returns:
+        Correlation coefficient, strength, and interpretation
+    """
+    try:
+        analytics = get_analytics()
+        correlation = analytics.get_correlation(days=days)
+        
+        return {
+            "days": days,
+            "correlation": correlation
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Correlation analysis failed: {str(e)}"
+        )
 
 
 if __name__ == "__main__":
