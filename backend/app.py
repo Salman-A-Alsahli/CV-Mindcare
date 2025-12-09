@@ -24,7 +24,7 @@ from .database import (
 app = FastAPI(
     title="CV-Mindcare API",
     description="Backend API for CV-Mindcare system",
-    version="0.1.0",
+    version="0.2.0",
 )
 
 app.add_middleware(
@@ -61,9 +61,15 @@ async def startup() -> None:
 async def root() -> Dict[str, str]:
     return {
         "status": "online",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "name": "CV-Mindcare API",
     }
+
+
+@app.get("/api/health")
+async def health() -> Dict[str, str]:
+    """Health check endpoint for monitoring and load balancers."""
+    return {"status": "ok"}
 
 
 @app.get("/api/sensors")
@@ -164,6 +170,68 @@ async def get_live() -> Dict[str, object]:
 @app.post("/api/control/stop")
 async def stop_collection() -> Dict[str, str]:
     return {"message": "data collection stop requested"}
+
+
+@app.get("/api/context")
+async def get_context(days: int = 30) -> Dict[str, object]:
+    """Get context payload combining current readings with historical summary.
+    
+    Args:
+        days: Number of days of history to analyze (default: 30)
+        
+    Returns:
+        Dict containing current_readings and historical_summary
+    """
+    # Get current live data
+    live_data = await get_live()
+    
+    # Get historical data from database
+    recent_data = get_recent_sensor_data(limit=100)
+    
+    # Calculate basic statistics from recent data
+    emotions = {}
+    noise_levels = []
+    greenery_levels = []
+    
+    for record in recent_data:
+        sensor_type = record.get("sensor_type", "").lower()
+        value = record.get("value", 0)
+        
+        if "emotion" in sensor_type:
+            emotion_name = sensor_type.replace("emotion_", "").replace("emotion", "neutral")
+            emotions[emotion_name] = emotions.get(emotion_name, 0) + 1
+        elif sensor_type == "noise" or sensor_type == "sound":
+            noise_levels.append(value)
+        elif sensor_type == "greenery":
+            greenery_levels.append(value)
+    
+    # Determine most frequent emotion
+    most_frequent_emotion = max(emotions.items(), key=lambda x: x[1])[0] if emotions else "neutral"
+    
+    # Calculate average noise level
+    avg_noise = sum(noise_levels) / len(noise_levels) if noise_levels else live_data.get("avg_db", 0)
+    
+    # Categorize noise time (simplified - would need timestamp analysis for full implementation)
+    noise_category = "quiet" if avg_noise < 50 else "moderate" if avg_noise < 70 else "loud"
+    
+    historical_summary = {
+        "most_frequent_emotion": most_frequent_emotion,
+        "noisiest_time_of_day": noise_category,
+        "avg_noise_level": round(avg_noise, 2),
+        "avg_greenery": round(sum(greenery_levels) / len(greenery_levels), 2) if greenery_levels else 0.0,
+        "data_points": len(recent_data),
+    }
+    
+    return {
+        "current_readings": {
+            "dominant_emotion": live_data.get("dominant_emotion"),
+            "avg_db": live_data.get("avg_db"),
+            "avg_green_pct": live_data.get("avg_green_pct"),
+            "faces_detected": live_data.get("faces_detected"),
+            "last_updated": live_data.get("last_updated"),
+        },
+        "historical_summary": historical_summary,
+    }
 
 
 if __name__ == "__main__":

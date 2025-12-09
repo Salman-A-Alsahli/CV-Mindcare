@@ -20,8 +20,15 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "online"
-        assert data["version"] == "0.1.0"
+        assert data["version"] == "0.2.0"
         assert data["name"] == "CV-Mindcare API"
+    
+    def test_health_endpoint(self):
+        """Test GET /api/health returns ok status."""
+        response = client.get("/api/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "ok"
 
 
 class TestSensorsEndpoints:
