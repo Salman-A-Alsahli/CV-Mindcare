@@ -217,5 +217,57 @@ class TestCameraEndpoints:
         assert response.status_code == 400
 
 
+class TestMicrophoneEndpoints:
+    """Tests for microphone sensor endpoints (Phase 4)."""
+    
+    def test_get_microphone_status(self):
+        """Test GET /api/sensors/microphone/status."""
+        response = client.get("/api/sensors/microphone/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert "sensor_type" in data
+        assert data["sensor_type"] == "microphone"
+        assert "available" in data
+        assert "status" in data
+    
+    def test_capture_microphone_data(self):
+        """Test GET /api/sensors/microphone/capture."""
+        response = client.get("/api/sensors/microphone/capture")
+        assert response.status_code == 200
+        data = response.json()
+        assert "timestamp" in data
+        assert "sensor_type" in data
+        assert data["sensor_type"] == "microphone"
+        assert "db_level" in data
+        assert 0 <= data["db_level"] <= 100
+        assert "noise_classification" in data
+        assert "mock_mode" in data
+    
+    def test_capture_microphone_data_custom_duration(self):
+        """Test GET /api/sensors/microphone/capture with custom duration."""
+        response = client.get("/api/sensors/microphone/capture?duration=0.5")
+        assert response.status_code == 200
+        data = response.json()
+        assert "sample_duration" in data
+        assert data["sample_duration"] == 0.5
+    
+    def test_post_noise_data(self):
+        """Test POST /api/sensors/microphone/noise."""
+        response = client.post("/api/sensors/microphone/noise?db_level=45.0")
+        assert response.status_code == 201
+        data = response.json()
+        assert "message" in data
+    
+    def test_post_noise_data_invalid_low(self):
+        """Test POST /api/sensors/microphone/noise with invalid low value."""
+        response = client.post("/api/sensors/microphone/noise?db_level=-5")
+        assert response.status_code == 400
+    
+    def test_post_noise_data_invalid_high(self):
+        """Test POST /api/sensors/microphone/noise with invalid high value."""
+        response = client.post("/api/sensors/microphone/noise?db_level=105")
+        assert response.status_code == 400
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -245,6 +245,82 @@ async def post_greenery_data(greenery_percentage: float) -> Dict[str, str]:
     return {"message": "greenery data recorded"}
 
 
+# Microphone Sensor Endpoints (Phase 4)
+
+@app.get("/api/sensors/microphone/status")
+async def get_microphone_status() -> Dict[str, object]:
+    """
+    Get microphone sensor status.
+    
+    Returns sensor availability and configuration information.
+    """
+    try:
+        from .sensors.microphone_sensor import check_microphone_available
+        available = check_microphone_available()
+        return {
+            "sensor_type": "microphone",
+            "available": available,
+            "backend": "sounddevice",
+            "status": "available" if available else "unavailable",
+        }
+    except Exception as e:
+        return {
+            "sensor_type": "microphone",
+            "available": False,
+            "status": "error",
+            "error": str(e),
+        }
+
+
+@app.get("/api/sensors/microphone/capture")
+async def capture_microphone_data(duration: float = 1.0) -> Dict[str, object]:
+    """
+    Capture microphone data with noise level analysis.
+    
+    Args:
+        duration: Sample duration in seconds (default: 1.0)
+    
+    Returns noise level analysis including dB level and classification.
+    Automatically falls back to mock mode if hardware unavailable.
+    """
+    try:
+        from .sensors.microphone_sensor import get_microphone_reading
+        data = get_microphone_reading(duration=duration)
+        
+        # Store noise data in database
+        if not data.get('mock_mode', False):
+            db_level = data.get('db_level', 0.0)
+            insert_sensor_data("noise", db_level)
+        
+        return data
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Microphone capture failed: {str(e)}"
+        )
+
+
+@app.post("/api/sensors/microphone/noise", status_code=status.HTTP_201_CREATED)
+async def post_noise_data(db_level: float) -> Dict[str, str]:
+    """
+    Manually submit noise level data.
+    
+    Args:
+        db_level: Noise level in dB (0-100 normalized)
+    
+    Returns:
+        Confirmation message
+    """
+    if not 0 <= db_level <= 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Noise level must be between 0 and 100"
+        )
+    
+    insert_sensor_data("noise", db_level)
+    return {"message": "noise data recorded"}
+
+
 @app.get("/api/context")
 async def get_context(days: int = 30) -> Dict[str, object]:
     """Get context payload combining current readings with historical summary.
