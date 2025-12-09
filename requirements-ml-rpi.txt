@@ -1,0 +1,49 @@
+# CV-Mindcare ML Requirements for Raspberry Pi 5 (ARM64)
+# Optimized dependencies for ARM64 architecture with reduced memory footprint
+#
+# Install with: pip install -r requirements-ml-rpi.txt
+#
+# Note: These are lighter alternatives to full ML stack for embedded deployment
+
+# Camera - Native Raspberry Pi support (much faster than OpenCV)
+picamera2>=0.3.12
+# Note: picamera2 is pre-installed on Raspberry Pi OS, but include for venv
+
+# Audio Processing
+# sounddevice  # Alternative: Use ALSA directly for lower overhead
+pyaudio>=0.2.13  # Better ARM64 support than sounddevice
+
+# Computer Vision (lightweight)
+opencv-python-headless>=4.8.0  # Headless version (no GUI, smaller)
+# Note: Use 'opencv-python-headless' instead of full 'opencv-python'
+
+# Lightweight ML Inference
+# Option 1: TensorFlow Lite (Recommended for Raspberry Pi)
+tflite-runtime>=2.14.0  # Much smaller than full TensorFlow (~5MB vs ~500MB)
+
+# Option 2: ONNX Runtime (Alternative lightweight inference)
+# onnxruntime>=1.16.0
+
+# Face Detection - Lightweight models
+# Instead of DeepFace (too heavy), use lightweight alternatives:
+mediapipe>=0.10.8  # Google's lightweight ML framework (includes face detection)
+
+# Emotion Detection - Lightweight
+# fer>=22.4.0  # Lightweight emotion recognition library
+
+# Image Processing
+Pillow>=10.0.0
+
+# Numerical Operations (already in requirements-base.txt, but ensure ARM64 wheels)
+# numpy
+# scipy
+
+# Note: Avoid heavy dependencies on Raspberry Pi:
+# ❌ torch (PyTorch) - Too large (~1.5GB), use TFLite instead
+# ❌ transformers - Too memory intensive for Pi
+# ❌ deepface - Requires tensorflow/pytorch backend
+# ❌ accelerate, safetensors - PyTorch ecosystem
+
+# Development/Testing (optional)
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
