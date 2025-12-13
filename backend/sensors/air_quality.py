@@ -364,24 +364,35 @@ class AirQualitySensor(BaseSensor):
         Convert raw sensor value to PPM concentration.
         
         Uses calibration factor and sensor characteristics curve.
-        This is a simplified conversion - real-world deployment would
-        require proper calibration against known gas concentrations.
+        
+        IMPORTANT: This is a simplified linear conversion suitable for
+        initial testing and development. For production deployment with
+        real MQ-135 hardware, implement proper logarithmic curve fitting
+        based on the MQ-135 datasheet specifications:
+        
+        Production formula should be:
+        Rs = ((Vc * RL) / Vout) - RL  # Sensor resistance
+        PPM = a * (Rs/R0)^b  # Where a,b are gas-specific constants
+        
+        Gas-specific constants (from MQ-135 datasheet):
+        - CO2: a=116.6020682, b=-2.769034857
+        - NH3: a=102.2, b=-2.473
+        - Benzene: a=34.668, b=-3.369
+        
+        See: https://github.com/GeorgK/MQ135 for reference implementation
         
         Args:
-            raw_value: Raw analog reading (0-1023)
+            raw_value: Raw analog reading (0-1023 for 10-bit ADC)
         
         Returns:
-            float: PPM concentration
+            float: PPM concentration (approximate)
         """
         # Simplified PPM conversion (assumes 0-1023 ADC range)
-        # Real MQ-135 would use logarithmic curve fitting
-        # PPM = calibration_factor * (raw_value / max_value) * max_ppm
-        
+        # Linear approximation for development/testing only
         max_adc = 1023.0
         max_ppm = 300.0  # Maximum PPM we'll measure
         
-        # Linear approximation (for demonstration)
-        # In production, use proper MQ-135 resistance-to-PPM curve
+        # Linear approximation - replace with logarithmic curve for production
         ppm = self.calibration_factor * (raw_value / max_adc) * max_ppm
         
         return max(0.0, ppm)  # Ensure non-negative

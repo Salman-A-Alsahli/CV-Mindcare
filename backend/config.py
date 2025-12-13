@@ -431,7 +431,14 @@ def get_sensor_config(sensor_type: str) -> Dict[str, Any]:
     
     Returns:
         Dict: Sensor configuration
+    
+    Raises:
+        ValueError: If sensor_type is not supported
     """
+    valid_sensors = ['camera', 'microphone', 'air_quality']
+    if sensor_type not in valid_sensors:
+        raise ValueError(f"Invalid sensor type: {sensor_type}. Must be one of {valid_sensors}")
+    
     return config.get(f'sensors.{sensor_type}', default={})
 
 
@@ -459,5 +466,12 @@ def is_mock_mode(sensor_type: str) -> bool:
     
     Returns:
         bool: True if mock mode enabled
+    
+    Raises:
+        ValueError: If sensor_type is not supported
     """
+    valid_sensors = ['camera', 'microphone', 'air_quality']
+    if sensor_type not in valid_sensors:
+        raise ValueError(f"Invalid sensor type: {sensor_type}. Must be one of {valid_sensors}")
+    
     return config.get(f'sensors.{sensor_type}.mock_mode', default=False)

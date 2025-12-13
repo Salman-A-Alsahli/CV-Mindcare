@@ -157,10 +157,21 @@ forecasting:
   enabled: false  # Advanced feature, disabled by default
   
   # Forecasting method
+  # Note: ARIMA requires statsmodels library (pip install statsmodels)
+  # Exponential smoothing is lightweight and suitable for most use cases
   method: exponential_smoothing  # Options: moving_average, exponential_smoothing, arima
   
   # Forecast horizon
   horizon_hours: 24
+  
+  # Computational requirements:
+  # - moving_average: Minimal CPU, ~10ms per forecast
+  # - exponential_smoothing: Low CPU, ~50ms per forecast
+  # - arima: High CPU, ~500ms-2s per forecast (requires statsmodels)
+  
+  # Dependencies:
+  # - arima: pip install statsmodels scipy
+  # - Others: No additional dependencies
   
   # Confidence intervals
   confidence_levels:
