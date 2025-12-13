@@ -100,9 +100,6 @@ Welcome to CV-Mindcare! This guide will help you install and set up the system o
 
 2. **Follow Steps 2-4 from Method 1 above**
 
-### Method 3: Windows Executable (Coming Soon)
-A standalone Windows executable will be available for download that requires no Python installation.
-
 ## First Run
 
 ### Starting the Launcher
@@ -115,38 +112,23 @@ A standalone Windows executable will be available for download that requires no 
 
 2. **Launch the Application**
    ```powershell
-   python -m launcher.launcher
+   uvicorn backend.app:app --reload
+   # Open http://localhost:8000/docs for API documentation
    ```
    
-   Or simply:
+   Or use the startup script:
    ```powershell
-   python launcher/launcher.py
+   .\start-dashboard.sh
    ```
 
-### Using the Launcher
-
-1. **System Check**
-   - The launcher automatically runs system checks on startup
-   - Green checkmarks (✓) indicate passed checks
-   - Red crosses (✗) indicate issues that need resolution
-
-2. **Start Dashboard**
-   - Once all checks pass, click "Start Dashboard"
-   - The backend server will start automatically
-   - Your default browser will open the dashboard
-   - The launcher window shows system logs
-
 3. **Monitor Your Environment**
-   - The dashboard displays:
-     - Dominant emotion detected
-     - Ambient noise level (dB)
-     - Greenery percentage in camera view
-     - System resource usage (CPU, memory)
-     - Emotion distribution chart
-
-4. **Stop the System**
-   - Click "Stop System" in the launcher
-   - Or close the launcher window (automatically stops backend)
+   - Access the API at http://localhost:8000
+   - View API documentation at http://localhost:8000/docs
+   - The API provides endpoints for:
+     - Sensor data collection
+     - Face detection history
+     - Sound analysis
+     - System statistics
 
 ## Troubleshooting
 
@@ -196,7 +178,7 @@ netstat -ano | findstr :8000
 # Kill process using the port (replace PID with actual process ID)
 taskkill /PID <PID> /F
 
-# Restart the launcher
+# Restart the backend
 ```
 
 #### 5. Execution Policy Error
@@ -212,7 +194,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 **Solutions**:
 - Wait 10-15 seconds for backend to start
-- Check launcher logs for errors
+- Check backend logs for errors
 - Try accessing http://127.0.0.1:8000 directly
 - Check firewall settings (allow Python)
 
@@ -220,7 +202,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 If you encounter issues:
 
-1. **Check Logs**: The launcher displays system logs in the bottom panel
+1. **Check Logs**: Review backend logs for errors
 2. **GitHub Issues**: [Report issues](https://github.com/Salman-A-Alsahli/CV-Mindcare/issues)
 3. **Documentation**: Check `docs/` folder for detailed docs
 

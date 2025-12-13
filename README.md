@@ -27,9 +27,6 @@ pip install -e .[dev,ml]
 
 Alternative methods:
 ```bash
-# Desktop GUI
-python launcher/main.py
-
 # API only
 uvicorn backend.app:app --reload
 # Visit http://localhost:8000/docs
@@ -59,7 +56,6 @@ uvicorn backend.app:app --reload
 
 ### User Guide
 - 📊 [Web Dashboard](docs/user-guide/web-dashboard.md) - Using the interface
-- 🖥️ [Desktop App](docs/user-guide/desktop-app.md) - GUI launcher guide
 - ⚡ [Features](docs/user-guide/features.md) - Complete feature list
 
 ### Development
