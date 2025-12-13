@@ -16,13 +16,125 @@ CV Mindcare is a **privacy-first local wellness monitoring application** that ob
 
 ✅ **Privacy-First:** All processing happens locally - zero cloud dependencies  
 ✅ **Modern Web Dashboard:** Beautiful React interface for real-time monitoring and analytics  
-✅ **Smart Monitoring:** Camera (greenery) + Microphone (noise) + AI recommendations  
+✅ **Smart Monitoring:** Camera (greenery) + Microphone (noise) + Air Quality (MQ-135) + AI recommendations  
 ✅ **Real-Time Streaming:** WebSocket support for live data  
 ✅ **Advanced Analytics:** Trends, anomalies, correlations with interactive charts  
 ✅ **Easy Integration:** REST API + examples in Python, JavaScript, curl  
-✅ **Production Ready:** 228 tests, CI/CD pipeline, optimized for Raspberry Pi 5  
+✅ **Production Ready:** 279+ tests, CI/CD pipeline, optimized for Raspberry Pi 5  
 
 This repository includes a lightweight local database, a context-aware AI assistant that uses historical data to provide personalized recommendations, and a modern web dashboard for easy monitoring.
+
+## 🌡️ Supported Sensors
+
+CV-Mindcare supports three environmental sensors for comprehensive wellness monitoring:
+
+1. **📷 Camera Sensor** - Greenery detection via HSV color analysis
+   - Detects nature presence in your environment
+   - Configurable HSV thresholds for accurate green detection
+   - Automatic fallback to mock mode without camera
+
+2. **🎤 Microphone Sensor** - Noise level monitoring
+   - Real-time dB level measurement
+   - Classification: Very Quiet, Quiet, Moderate, Loud, Very Loud
+   - Supports multiple backends (sounddevice, pyaudio)
+
+3. **💨 MQ-135 Air Quality Sensor** (New in v0.2.1)
+   - PPM (parts per million) gas concentration measurement
+   - Air quality levels: Excellent (0-50), Good (51-100), Moderate (101-150), Poor (151-200), Hazardous (200+)
+   - Serial or GPIO/ADC connection support
+   - Calibration mechanism for accuracy
+   - Perfect for monitoring CO2, NH3, benzene, and smoke
+
+### MQ-135 Air Quality Sensor Setup
+
+#### Hardware Requirements
+- MQ-135 analog gas sensor module
+- Analog-to-digital converter (ADC):
+  - **USB Serial Adapter** (easiest): Any USB-to-serial adapter that outputs sensor readings
+  - **MCP3008 SPI ADC** (Raspberry Pi): 8-channel 10-bit ADC via SPI
+  - **ADS1115 I2C ADC** (alternative): 4-channel 16-bit ADC via I2C
+
+#### Quick Setup (Serial Connection)
+
+```bash
+# 1. Connect MQ-135 to USB serial adapter
+# 2. Identify serial port
+ls /dev/ttyUSB*  # or /dev/ttyACM*
+
+# 3. Configure in config/sensors.yaml
+# air_quality:
+#   backend: serial
+#   serial:
+#     port: /dev/ttyUSB0
+#     baudrate: 9600
+
+# 4. Test the sensor
+python -c "from backend.sensors.air_quality import get_air_quality_reading; print(get_air_quality_reading())"
+```
+
+#### Raspberry Pi GPIO Setup (MCP3008)
+
+```bash
+# 1. Enable SPI
+sudo raspi-config
+# Navigate to: Interfacing Options > SPI > Enable
+
+# 2. Install spidev library
+pip install spidev
+
+# 3. Connect MQ-135 to MCP3008:
+# MQ-135 VCC -> 5V
+# MQ-135 GND -> GND
+# MQ-135 AOUT -> MCP3008 CH0
+
+# MCP3008 connections:
+# Pin 1 (CH0) -> MQ-135 AOUT
+# Pin 9 (DGND) -> GND
+# Pin 10 (CS) -> GPIO 8 (CE0)
+# Pin 11 (DIN) -> GPIO 10 (MOSI)
+# Pin 12 (DOUT) -> GPIO 9 (MISO)
+# Pin 13 (CLK) -> GPIO 11 (SCLK)
+# Pin 14 (AGND) -> GND
+# Pin 15 (VREF) -> 3.3V
+# Pin 16 (VDD) -> 3.3V
+
+# 4. Configure in config/sensors.yaml
+# air_quality:
+#   backend: gpio
+#   gpio:
+#     channel: 0
+```
+
+#### Calibration
+
+For accurate PPM readings, calibrate your MQ-135 sensor:
+
+```python
+from backend.sensors.air_quality import AirQualitySensor
+
+sensor = AirQualitySensor()
+sensor.start()
+
+# Expose sensor to known concentration (e.g., 100 PPM)
+# Read raw value
+data = sensor.read()
+raw_value = data['raw_value']
+
+# Calibrate
+new_factor = sensor.calibrate(known_ppm=100, measured_raw=raw_value)
+print(f"New calibration factor: {new_factor}")
+
+# Update config/sensors.yaml with new calibration_factor
+sensor.stop()
+```
+
+#### Using Mock Mode (Testing Without Hardware)
+
+```yaml
+# config/sensors.yaml
+air_quality:
+  mock_mode: true  # Generates realistic test data
+```
 
 ## Architecture
 
