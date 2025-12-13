@@ -37,14 +37,14 @@ pytest tests/unit/ -v --cov=backend --cov-report=term
 **Usage:**
 ```bash
 # Run locally
-black --check backend/ tests/ launcher/
-flake8 backend/ tests/ launcher/ --max-line-length=100 --extend-ignore=E203,W503
+black --check backend/ tests/
+flake8 backend/ tests/ --max-line-length=100 --extend-ignore=E203,W503
 mypy backend/ --ignore-missing-imports --no-strict-optional
 ```
 
 **Auto-fix formatting:**
 ```bash
-black backend/ tests/ launcher/
+black backend/ tests/
 ```
 
 ### 3. Security Workflow (`security.yml`)
@@ -160,7 +160,6 @@ git push origin v0.2.0
 2. **Version bump**: Update version in `backend/app.py`
 3. **Tag release**: Create git tag with version
 4. **GitHub Release**: Create release notes
-5. **Build artifacts**: PyInstaller creates executables
 
 ### Branch Strategy
 
@@ -188,7 +187,7 @@ pytest --lf
 
 ```bash
 # Auto-fix with Black
-black backend/ tests/ launcher/
+black backend/ tests/
 
 # Check specific file
 flake8 backend/analytics.py

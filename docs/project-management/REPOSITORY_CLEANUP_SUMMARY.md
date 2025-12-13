@@ -95,7 +95,6 @@ Root Directory (Essential Files Only):
 ├── docker-compose.yml
 ├── pyproject.toml
 ├── pytest.ini
-├── build.ps1
 ├── setup-frontend.sh
 └── start-dashboard.sh
 

@@ -481,18 +481,15 @@ Successfully cleaned the CV-Mindcare repository, removing ~150MB+ of legacy file
 - **docker-compose.yml** - Docker Compose configuration not in v0.1.0
 - **Makefile** - Unix-style makefile with broken references
 - **README.dev.md** - Old development docs, superseded by `docs/DEVELOPMENT.md`
-- **CV-Mindcare.spec** - Auto-generated PyInstaller spec file
 
-### 2. Build Artifacts (4 directories/files)
-- **build/** - PyInstaller build output directory
-- **dist/** - Distribution artifacts directory
+### 2. Build Artifacts (3 directories/files)
 - **.pytest_cache/** - pytest test cache
 - **backend/cv_mindcare.db** - Test database file
 
 ### 3. Frontend Directory (~150MB+)
 - **frontend/** - Entire React/Vite frontend application
   - Removed because frontend is **not in v0.1.0 scope**
-  - v0.1.0 focuses on desktop launcher + backend only
+  - v0.1.0 focuses on backend API only
   - Included:
     - node_modules/ (~2000+ files)
     - src/ (React components)
@@ -567,13 +564,10 @@ Expanded from **8 lines to 50+ lines** with comprehensive sections:
 CV-Mindcare/
 ├── .github/              # GitHub workflows and issue templates
 ├── backend/              # FastAPI backend server
-├── build_scripts/        # Build automation scripts
 ├── docs/                 # Documentation
-├── launcher/             # CustomTkinter desktop launcher
 ├── tests/                # pytest test suite
 ├── venv/                 # Python virtual environment (gitignored)
 ├── .gitignore            # Comprehensive gitignore rules
-├── build.ps1             # PowerShell build script
 ├── CONTRIBUTING.md       # Contribution guidelines
 ├── LICENSE               # MIT License
 ├── PROJECT_STATUS.md     # Project status tracking
@@ -606,9 +600,7 @@ All removed files are still accessible through git history:
 ## v0.1.0 Components (Remaining)
 
 ### Core Application
-- **launcher/** - CustomTkinter desktop GUI
 - **backend/** - FastAPI server with emotion detection
-- **build_scripts/** - Executable build automation
 
 ### Testing & Documentation
 - **tests/** - 31 automated tests (100% passing)
