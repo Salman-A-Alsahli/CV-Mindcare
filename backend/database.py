@@ -32,6 +32,19 @@ CREATE TABLE IF NOT EXISTS sound_analysis (
     avg_db REAL NOT NULL,
     timestamp TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS air_quality (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ppm REAL NOT NULL,
+    air_quality_level TEXT NOT NULL,
+    raw_value REAL,
+    timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_sensor_data_timestamp ON sensor_data(timestamp);
+CREATE INDEX IF NOT EXISTS idx_sensor_data_type ON sensor_data(sensor_type);
+CREATE INDEX IF NOT EXISTS idx_air_quality_timestamp ON air_quality(timestamp);
+CREATE INDEX IF NOT EXISTS idx_air_quality_level ON air_quality(air_quality_level);
 """
 
 def _get_connection() -> sqlite3.Connection:
@@ -100,6 +113,35 @@ def get_latest_sound_analysis() -> Optional[Dict[str, Any]]:
         return dict(row) if row else None
 
 
+def insert_air_quality(ppm: float, air_quality_level: str, raw_value: Optional[float] = None) -> None:
+    """Insert air quality measurement into database."""
+    with closing(_get_connection()) as conn:
+        conn.execute(
+            "INSERT INTO air_quality (ppm, air_quality_level, raw_value) VALUES (?, ?, ?)",
+            (ppm, air_quality_level, raw_value)
+        )
+        conn.commit()
+
+
+def get_latest_air_quality() -> Optional[Dict[str, Any]]:
+    """Get the most recent air quality measurement."""
+    with closing(_get_connection()) as conn:
+        row = conn.execute(
+            "SELECT ppm, air_quality_level, raw_value, timestamp FROM air_quality ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def get_recent_air_quality(limit: int = 10) -> List[Dict[str, Any]]:
+    """Get recent air quality measurements."""
+    with closing(_get_connection()) as conn:
+        rows = conn.execute(
+            "SELECT ppm, air_quality_level, raw_value, timestamp FROM air_quality ORDER BY id DESC LIMIT ?",
+            (limit,)
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
 def get_sensor_status(window_minutes: int = 10) -> Dict[str, bool]:
     cutoff = datetime.utcnow() - timedelta(minutes=window_minutes)
     with closing(_get_connection()) as conn:
@@ -124,12 +166,14 @@ def get_system_stats() -> Dict[str, Any]:
         sensor_points = conn.execute("SELECT COUNT(*) FROM sensor_data").fetchone()[0]
         face_points = conn.execute("SELECT COUNT(*) FROM face_detection").fetchone()[0]
         sound_points = conn.execute("SELECT COUNT(*) FROM sound_analysis").fetchone()[0]
+        air_quality_points = conn.execute("SELECT COUNT(*) FROM air_quality").fetchone()[0]
 
     return {
-        "data_points": sensor_points + face_points + sound_points,
+        "data_points": sensor_points + face_points + sound_points + air_quality_points,
         "sensor_points": sensor_points,
         "face_points": face_points,
-        "sound_points": sound_points
+        "sound_points": sound_points,
+        "air_quality_points": air_quality_points
     }
 
 

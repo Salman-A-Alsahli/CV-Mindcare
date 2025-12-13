@@ -23,6 +23,7 @@ from enum import Enum
 
 from .camera_sensor import CameraSensor
 from .microphone_sensor import MicrophoneSensor
+from .air_quality import AirQualitySensor
 from .base import SensorStatus
 
 logger = logging.getLogger(__name__)
@@ -86,6 +87,7 @@ class SensorManager:
         # Initialize sensors
         self.camera = CameraSensor(self.config.get('camera', {}))
         self.microphone = MicrophoneSensor(self.config.get('microphone', {}))
+        self.air_quality = AirQualitySensor(self.config.get('air_quality', {}))
         
         # State management
         self.status = ManagerStatus.STOPPED
@@ -97,15 +99,18 @@ class SensorManager:
         # Health tracking
         self._retry_counts: Dict[str, int] = {
             'camera': 0,
-            'microphone': 0
+            'microphone': 0,
+            'air_quality': 0
         }
         self._last_read_time: Dict[str, Optional[datetime]] = {
             'camera': None,
-            'microphone': None
+            'microphone': None,
+            'air_quality': None
         }
         self._error_counts: Dict[str, int] = {
             'camera': 0,
-            'microphone': 0
+            'microphone': 0,
+            'air_quality': 0
         }
         
         logger.info(f"SensorManager initialized (polling={self.polling_interval}s)")
@@ -128,8 +133,9 @@ class SensorManager:
             # Start individual sensors
             camera_ok = self._start_sensor(self.camera, 'camera')
             microphone_ok = self._start_sensor(self.microphone, 'microphone')
+            air_quality_ok = self._start_sensor(self.air_quality, 'air_quality')
             
-            if not camera_ok and not microphone_ok:
+            if not camera_ok and not microphone_ok and not air_quality_ok:
                 logger.error("Failed to start any sensors")
                 self.status = ManagerStatus.ERROR
                 return False
@@ -145,7 +151,7 @@ class SensorManager:
             
             self.status = ManagerStatus.RUNNING
             self._start_time = datetime.now()  # Set start time when running
-            logger.info(f"SensorManager started (camera={camera_ok}, microphone={microphone_ok})")
+            logger.info(f"SensorManager started (camera={camera_ok}, microphone={microphone_ok}, air_quality={air_quality_ok})")
             return True
     
     def stop_all(self) -> bool:
@@ -174,10 +180,11 @@ class SensorManager:
             # Stop individual sensors
             camera_ok = self._stop_sensor(self.camera, 'camera')
             microphone_ok = self._stop_sensor(self.microphone, 'microphone')
+            air_quality_ok = self._stop_sensor(self.air_quality, 'air_quality')
             
             self.status = ManagerStatus.STOPPED
             self._start_time = None  # Clear start time after calculating uptime
-            logger.info(f"SensorManager stopped (camera={camera_ok}, microphone={microphone_ok}, uptime={final_uptime}s)")
+            logger.info(f"SensorManager stopped (camera={camera_ok}, microphone={microphone_ok}, air_quality={air_quality_ok}, uptime={final_uptime}s)")
             return True
     
     def get_all_status(self) -> Dict[str, Any]:
@@ -190,6 +197,7 @@ class SensorManager:
         with self._lock:
             camera_status = self.camera.get_status()
             microphone_status = self.microphone.get_status()
+            air_quality_status = self.air_quality.get_status()
             
             return {
                 'manager': {
@@ -210,6 +218,12 @@ class SensorManager:
                         'error_count': self._error_counts['microphone'],
                         'retry_count': self._retry_counts['microphone'],
                         'last_read': self._last_read_time['microphone'].isoformat() if self._last_read_time['microphone'] else None
+                    },
+                    'air_quality': {
+                        **air_quality_status,
+                        'error_count': self._error_counts['air_quality'],
+                        'retry_count': self._retry_counts['air_quality'],
+                        'last_read': self._last_read_time['air_quality'].isoformat() if self._last_read_time['air_quality'] else None
                     }
                 },
                 'timestamp': datetime.now().isoformat()
@@ -250,6 +264,17 @@ class SensorManager:
                 logger.error(f"Error reading microphone: {e}")
                 result['errors']['microphone'] = str(e)
                 self._error_counts['microphone'] += 1
+            
+            # Read air quality
+            try:
+                air_quality_data = self.air_quality.read()
+                result['data']['air_quality'] = air_quality_data
+                self._last_read_time['air_quality'] = datetime.now()
+                self._error_counts['air_quality'] = 0  # Reset on success
+            except Exception as e:
+                logger.error(f"Error reading air_quality: {e}")
+                result['errors']['air_quality'] = str(e)
+                self._error_counts['air_quality'] += 1
             
             return result
     
