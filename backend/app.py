@@ -1068,7 +1068,7 @@ async def get_patterns(days: int = 14, pattern_type: str = "all") -> Dict[str, o
     if pattern_type not in valid_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Pattern type must be one of: {valid_types}",
+            detail=f"Invalid pattern_type. Must be one of: {valid_types}",
         )
 
     try:
