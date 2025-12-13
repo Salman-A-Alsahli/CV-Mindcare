@@ -2,10 +2,11 @@
 
 **Local wellness monitoring using camera, microphone, and air quality sensors with AI-powered recommendations.**
 
-[![Tests](https://img.shields.io/badge/tests-263%2F285-yellow)](https://github.com/Salman-A-Alsahli/CV-Mindcare/actions)
+[![Tests](https://img.shields.io/badge/tests-302%2F302-brightgreen)](https://github.com/Salman-A-Alsahli/CV-Mindcare/actions)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.3.0-orange)](https://github.com/Salman-A-Alsahli/CV-Mindcare/releases)
+[![Version](https://img.shields.io/badge/version-0.9.0-orange)](https://github.com/Salman-A-Alsahli/CV-Mindcare/releases)
+[![Docker](https://img.shields.io/badge/docker-ready-blue)](Dockerfile)
 
 ---
 
@@ -77,13 +78,19 @@ uvicorn backend.app:app --reload
 - �� [Changelog](docs/project-management/changelog.md) - Version history
 - 📋 [Backlog](docs/project-management/backlog.md) - Future features
 
+### Resources
+- 🔧 [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues & solutions
+- ⚡ [Performance](docs/PERFORMANCE.md) - Optimization guide
+- 🔌 [Integrations](docs/integrations/README.md) - Home Assistant & more
+- 📚 [API Examples](docs/examples/) - Python, JS, cURL samples
+
 ---
 
 ## 🎯 Current Status
 
-**Version**: v0.3.0 (Consolidation Release)  
-**Tests**: 263/285 passing (92.3%)  
-**Features**: Camera ✅ | Microphone ✅ | Air Quality ✅  
+**Version**: v0.9.0 (Pre-Release)  
+**Tests**: 302/302 passing (100%) ✅  
+**Features**: Camera ✅ | Microphone ✅ | Air Quality ✅ | Docker ✅  
 **Next Milestone**: v1.0.0 - Production Ready
 
 ---
@@ -94,7 +101,7 @@ uvicorn backend.app:app --reload
 - **Frontend**: React 18, Vite, Recharts, TailwindCSS
 - **Sensors**: OpenCV, SoundDevice, MQ-135 (Serial/GPIO)
 - **AI/ML**: DeepFace, Transformers (optional)
-- **Testing**: Pytest, 285 tests, 92.3% passing
+- **Testing**: Pytest, 302 tests, 100% passing ✅
 
 ---
 
