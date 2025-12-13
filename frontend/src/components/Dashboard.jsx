@@ -6,9 +6,7 @@ import WellnessScore from './WellnessScore';
 import Charts from './Charts';
 import Recommendations from './Recommendations';
 import PatternInsights from './PatternInsights';
-import { getManager
-
-Status, getManagerHealth, startManager } from '../services/api';
+import { getManagerStatus, getManagerHealth, startManager } from '../services/api';
 
 function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview');

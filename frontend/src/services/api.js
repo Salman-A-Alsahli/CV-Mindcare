@@ -13,9 +13,7 @@ export const getSensorStatus = async (sensorType) => {
   return response.data;
 };
 
-export const captureS
-
-ensorData = async (sensorType, params = {}) => {
+export const captureSensorData = async (sensorType, params = {}) => {
   const response = await api.get(`/api/sensors/${sensorType}/capture`, { params });
   return response.data;
 };
