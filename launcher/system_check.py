@@ -5,28 +5,29 @@ Performs system requirement checks for CV-Mindcare.
 """
 
 import os
-import sys
 import shutil
 import psutil
 import cv2
 import sounddevice as sd
-from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
+
 
 class SystemRequirements:
     """Defines minimum system requirements."""
+
     MIN_CPU_CORES = 2
     MIN_RAM_GB = 4
     MIN_DISK_SPACE_GB = 1
     REQUIRED_PACKAGES = [
-        'customtkinter',
-        'opencv-python',
-        'fastapi',
-        'uvicorn',
-        'sounddevice',
-        'numpy',
-        'sqlalchemy'
+        "customtkinter",
+        "opencv-python",
+        "fastapi",
+        "uvicorn",
+        "sounddevice",
+        "numpy",
+        "sqlalchemy",
     ]
+
 
 class SystemChecker:
     def __init__(self):
@@ -70,7 +71,7 @@ class SystemChecker:
         """Check microphone availability."""
         try:
             devices = sd.query_devices()
-            input_devices = [d for d in devices if d['max_input_channels'] > 0]
+            input_devices = [d for d in devices if d["max_input_channels"] > 0]
             status = len(input_devices) > 0
             message = f"Microphone: {'Available (OK)' if status else 'Not Found'}"
         except Exception as e:
@@ -83,23 +84,25 @@ class SystemChecker:
         missing = []
         for package in SystemRequirements.REQUIRED_PACKAGES:
             try:
-                __import__(package.replace('-', '_'))
+                __import__(package.replace("-", "_"))
             except ImportError:
                 missing.append(package)
-        
+
         status = len(missing) == 0
-        message = f"Packages: {'All installed (OK)' if status else f'Missing: {", ".join(missing)}'}"
+        message = (
+            f"Packages: {'All installed (OK)' if status else f'Missing: {", ".join(missing)}'}"
+        )
         return status, message
 
     def run_all_checks(self) -> Dict[str, Tuple[bool, str]]:
         """Run all system checks."""
         self.results = {
-            'cpu': self.check_cpu(),
-            'ram': self.check_ram(),
-            'disk': self.check_disk_space(),
-            'camera': self.check_camera(),
-            'microphone': self.check_microphone(),
-            'packages': self.check_packages()
+            "cpu": self.check_cpu(),
+            "ram": self.check_ram(),
+            "disk": self.check_disk_space(),
+            "camera": self.check_camera(),
+            "microphone": self.check_microphone(),
+            "packages": self.check_packages(),
         }
         return self.results
 
@@ -111,7 +114,7 @@ class SystemChecker:
         """Get a summary of all check results."""
         if not self.results:
             return "No checks performed yet."
-            
+
         summary = []
         for check_name, (status, message) in self.results.items():
             summary.append(f"✓ {message}" if status else f"✗ {message}")
