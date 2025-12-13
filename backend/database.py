@@ -175,5 +175,65 @@ def get_system_stats() -> Dict[str, Any]:
     }
 
 
+class Database:
+    """Database class wrapper for ContextEngine compatibility."""
+
+    def __init__(self, db_path: str = DB_PATH):
+        """Initialize Database wrapper.
+        
+        Args:
+            db_path: Path to SQLite database file
+        """
+        self.db_path = db_path
+        # Ensure database exists
+        init_db()
+
+    def get_greenery_data(self, since: Optional[datetime] = None) -> List[tuple]:
+        """Get greenery sensor data since specified time.
+        
+        Args:
+            since: Get data after this datetime (optional)
+            
+        Returns:
+            List of tuples: (timestamp, greenery_percentage)
+        """
+        with closing(_get_connection()) as conn:
+            if since:
+                since_str = since.strftime("%Y-%m-%d %H:%M:%S")
+                rows = conn.execute(
+                    "SELECT timestamp, value FROM sensor_data WHERE sensor_type = 'greenery' AND timestamp >= ? ORDER BY timestamp",
+                    (since_str,)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT timestamp, value FROM sensor_data WHERE sensor_type = 'greenery' ORDER BY timestamp"
+                ).fetchall()
+        
+        return [(row[0], row[1]) for row in rows]
+
+    def get_noise_data(self, since: Optional[datetime] = None) -> List[tuple]:
+        """Get noise sensor data since specified time.
+        
+        Args:
+            since: Get data after this datetime (optional)
+            
+        Returns:
+            List of tuples: (timestamp, noise_level)
+        """
+        with closing(_get_connection()) as conn:
+            if since:
+                since_str = since.strftime("%Y-%m-%d %H:%M:%S")
+                rows = conn.execute(
+                    "SELECT timestamp, value FROM sensor_data WHERE sensor_type = 'noise' AND timestamp >= ? ORDER BY timestamp",
+                    (since_str,)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT timestamp, value FROM sensor_data WHERE sensor_type = 'noise' ORDER BY timestamp"
+                ).fetchall()
+        
+        return [(row[0], row[1]) for row in rows]
+
+
 # Ensure database exists when module is imported
 init_db()
