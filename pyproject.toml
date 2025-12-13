@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cv-mindcare"
-version = "0.3.0"
+version = "1.0.0"
 description = "Privacy-first wellness monitoring with camera, microphone, and air quality sensors"
 readme = "README.md"
 license = {text = "MIT"}
@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["wellness", "mental-health", "sensors", "privacy", "monitoring", "air-quality"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",

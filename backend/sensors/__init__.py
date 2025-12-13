@@ -23,16 +23,16 @@ from .base import (
 
 __all__ = [
     # Base classes (always available)
-    'BaseSensor',
-    'SensorStatus',
-    'SensorError',
-    'SensorUnavailableError',
-    'SensorConfigError',
+    "BaseSensor",
+    "SensorStatus",
+    "SensorError",
+    "SensorUnavailableError",
+    "SensorConfigError",
 ]
 
 # Note: Specific sensor implementations should be imported explicitly
 # to avoid dependency issues during testing and development.
-# 
+#
 # Example:
 #   from backend.sensors.camera import CameraSensor
 #   from backend.sensors.microphone import MicrophoneSensor

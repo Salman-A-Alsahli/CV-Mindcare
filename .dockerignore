@@ -1,0 +1,94 @@
+# .dockerignore
+# Exclude files from Docker build context
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.db
+*.db-journal
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Tests
+tests/
+pytest.ini
+.pre-commit-config.yaml
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Node.js (if building frontend separately)
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm
+.yarn
+
+# Frontend build artifacts
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# Data files
+data/
+*.csv
+*.json
+*.log
+
+# Configuration (use environment variables instead)
+.env
+.env.local
+*.local
+
+# Build scripts
+build.ps1
+build_scripts/
+setup-frontend.sh
+start-dashboard.sh
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Office documents
+*.docx
+*.xlsx

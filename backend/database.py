@@ -47,6 +47,7 @@ CREATE INDEX IF NOT EXISTS idx_air_quality_timestamp ON air_quality(timestamp);
 CREATE INDEX IF NOT EXISTS idx_air_quality_level ON air_quality(air_quality_level);
 """
 
+
 def _get_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -59,32 +60,27 @@ def init_db():
         conn.executescript(SCHEMA)
         conn.commit()
 
+
 # Helper functions
+
 
 def insert_sensor_data(sensor_type: str, value: float) -> None:
     with closing(_get_connection()) as conn:
         conn.execute(
-            "INSERT INTO sensor_data (sensor_type, value) VALUES (?, ?)",
-            (sensor_type, value)
+            "INSERT INTO sensor_data (sensor_type, value) VALUES (?, ?)", (sensor_type, value)
         )
         conn.commit()
 
 
 def insert_face_detection(faces_detected: int) -> None:
     with closing(_get_connection()) as conn:
-        conn.execute(
-            "INSERT INTO face_detection (faces_detected) VALUES (?)",
-            (faces_detected,)
-        )
+        conn.execute("INSERT INTO face_detection (faces_detected) VALUES (?)", (faces_detected,))
         conn.commit()
 
 
 def insert_sound_analysis(avg_db: float) -> None:
     with closing(_get_connection()) as conn:
-        conn.execute(
-            "INSERT INTO sound_analysis (avg_db) VALUES (?)",
-            (avg_db,)
-        )
+        conn.execute("INSERT INTO sound_analysis (avg_db) VALUES (?)", (avg_db,))
         conn.commit()
 
 
@@ -92,7 +88,7 @@ def get_recent_sensor_data(limit: int = 10) -> List[Dict[str, Any]]:
     with closing(_get_connection()) as conn:
         rows = conn.execute(
             "SELECT sensor_type, value, timestamp FROM sensor_data ORDER BY id DESC LIMIT ?",
-            (limit,)
+            (limit,),
         ).fetchall()
         return [dict(row) for row in rows]
 
@@ -113,12 +109,14 @@ def get_latest_sound_analysis() -> Optional[Dict[str, Any]]:
         return dict(row) if row else None
 
 
-def insert_air_quality(ppm: float, air_quality_level: str, raw_value: Optional[float] = None) -> None:
+def insert_air_quality(
+    ppm: float, air_quality_level: str, raw_value: Optional[float] = None
+) -> None:
     """Insert air quality measurement into database."""
     with closing(_get_connection()) as conn:
         conn.execute(
             "INSERT INTO air_quality (ppm, air_quality_level, raw_value) VALUES (?, ?, ?)",
-            (ppm, air_quality_level, raw_value)
+            (ppm, air_quality_level, raw_value),
         )
         conn.commit()
 
@@ -137,7 +135,7 @@ def get_recent_air_quality(limit: int = 10) -> List[Dict[str, Any]]:
     with closing(_get_connection()) as conn:
         rows = conn.execute(
             "SELECT ppm, air_quality_level, raw_value, timestamp FROM air_quality ORDER BY id DESC LIMIT ?",
-            (limit,)
+            (limit,),
         ).fetchall()
         return [dict(row) for row in rows]
 
@@ -173,7 +171,7 @@ def get_system_stats() -> Dict[str, Any]:
         "sensor_points": sensor_points,
         "face_points": face_points,
         "sound_points": sound_points,
-        "air_quality_points": air_quality_points
+        "air_quality_points": air_quality_points,
     }
 
 
