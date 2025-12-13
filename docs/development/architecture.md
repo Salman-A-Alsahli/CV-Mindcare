@@ -115,7 +115,6 @@ CV-Mindcare is a **local-first desktop application** that monitors your workspac
 #### Development & Testing
 - **Testing:** pytest, pytest-cov, httpx
 - **Code Quality:** Black, flake8
-- **Building:** PyInstaller (Windows executable)
 
 ### Data Flow
 
@@ -187,15 +186,6 @@ CV-Mindcare/
 │       ├── sound_analysis.py    # FFT audio analysis
 │       └── system_monitor.py    # System resource monitoring
 │
-├── launcher/                     # Desktop GUI application
-│   ├── launcher.py              # Main CustomTkinter GUI
-│   ├── process_manager.py       # Backend lifecycle management
-│   ├── system_check.py          # Hardware/dependency checker
-│   ├── config.py                # Configuration management
-│   ├── settings_dialog.py       # Settings UI
-│   ├── tray.py                  # System tray integration
-│   └── updater.py               # Auto-update checker
-│
 ├── tests/                        # Comprehensive test suite
 │   ├── unit/                    # Unit tests
 │   │   ├── test_api.py          # FastAPI endpoint tests
@@ -208,9 +198,6 @@ CV-Mindcare/
 │   ├── API.md                   # API reference
 │   ├── DEVELOPMENT.md           # Developer guide
 │   └── MILESTONE_V0.2.0.md      # Next milestone plan
-│
-├── build_scripts/                # Build automation
-│   └── build_exe.py             # PyInstaller configuration
 │
 ├── requirements.txt             # Python dependencies
 ├── pytest.ini                   # Test configuration
@@ -230,30 +217,7 @@ All **9 milestone issues** for v0.1.0 are **CLOSED** ✅
 
 ### Completed Components
 
-#### 1. Desktop Launcher Application ✅
-**Status:** Fully functional  
-**Files:** `launcher/launcher.py`, `launcher/process_manager.py`, etc.
-
-**Features Implemented:**
-- ✅ Modern CustomTkinter GUI with dark/light theme support
-- ✅ System requirements checker (Python version, dependencies, hardware)
-- ✅ Backend process manager (start, stop, monitor, auto-restart)
-- ✅ Real-time log viewer with scrollback
-- ✅ Status indicators (Backend, Camera, Microphone, System)
-- ✅ One-click dashboard launch button
-- ✅ System tray integration (minimize to tray, background operation)
-- ✅ Configuration management (JSON-based persistence)
-- ✅ Settings dialog with 4 tabs (Backend, Launcher, Sensors, UI)
-- ✅ Auto-updater (checks GitHub Releases API)
-- ✅ Graceful shutdown with cleanup
-
-**Quality Metrics:**
-- **Lines of Code:** ~2,000
-- **Files:** 8 modules
-- **Testing:** Manual testing complete
-- **Documentation:** Complete README in launcher/
-
-#### 2. FastAPI Backend Server ✅
+#### 1. FastAPI Backend Server ✅
 **Status:** Fully functional  
 **Files:** `backend/app.py`, `backend/database.py`, `backend/models.py`
 
@@ -379,40 +343,6 @@ CREATE TABLE sound_analysis (
   - Component status
   - Test results summary
   - Next steps planning
-
-#### 6. Build & Packaging ✅
-**Status:** Functional  
-**Files:** `build_scripts/build_exe.py`, `build.ps1`
-
-**Build System:**
-- ✅ PyInstaller configuration (--onedir mode)
-- ✅ Hidden imports for all dependencies
-- ✅ Data bundling (backend, docs)
-- ✅ Excluded modules for size optimization
-- ✅ PowerShell build wrapper script
-- ✅ Automatic README generation for distribution
-- ✅ Error handling and user feedback
-
-**Output:**
-- Windows executable in `dist/CVMindcareLauncher/`
-- Portable folder distribution
-- Includes all dependencies
-
-#### 7. Configuration System ✅
-**Status:** Fully functional  
-**Files:** `launcher/config.py`
-
-**Features:**
-- ✅ JSON-based persistence (~/.cvmindcare/config.json)
-- ✅ Four configuration sections:
-  - Backend: host, port, auto-start
-  - Launcher: minimize to tray, start minimized, check updates
-  - Sensors: camera index, enable/disable sensors
-  - UI: theme, window dimensions
-- ✅ Type-safe getters/setters
-- ✅ Reset to defaults functionality
-- ✅ Import/export configuration
-- ✅ Global singleton access pattern
 
 ---
 
@@ -674,17 +604,9 @@ Frontend was removed in cleanup (intentionally for v0.1.0), but README still ref
 **Severity:** Medium  
 **Impact:** Potential bugs in untested components
 
-**Untested Components:**
-- ❌ Launcher GUI (launcher.py) - Requires manual testing
-- ❌ System tray (tray.py) - Requires GUI environment
-- ❌ Auto-updater (updater.py) - Requires network access
-- ❌ Settings dialog (settings_dialog.py) - Requires GUI
-- ❌ Process manager (process_manager.py) - Partially tested
-
 **Recommendation:**
-- Add unit tests for business logic in GUI components
-- Add integration tests with mocked GUI (pytest-qt)
-- Add automated GUI testing framework
+- Add unit tests for business logic components
+- Add integration tests with proper mocking
 - Document manual testing checklist
 
 ### 5. Documentation Inconsistencies ✅ RESOLVED
@@ -731,7 +653,6 @@ All dependencies (including 2GB ML libraries) were required.
 **Recommendation:**
 - Add GitHub Actions workflow for pytest
 - Add workflow for code quality (flake8, black)
-- Add workflow for building Windows executable
 - Add workflow for release packaging
 
 ---
@@ -744,18 +665,16 @@ All dependencies (including 2GB ML libraries) were required.
 |----------|--------|------------|-------|
 | **Backend API** | ✅ Complete | 90% | Core endpoints done, sensors missing |
 | **Database** | ✅ Complete | 100% | Fully functional, well-tested |
-| **Desktop Launcher** | ✅ Complete | 95% | Fully functional, needs more tests |
-| **Testing** | 🟡 Partial | 60% | Backend well-tested, GUI untested |
+| **Testing** | 🟡 Partial | 60% | Backend well-tested |
 | **Documentation** | ✅ Complete | 85% | Good, but some inconsistencies |
 | **Sensor Implementation** | ❌ Missing | 10% | Stubs exist, real implementation needed |
 | **AI Integration** | ❌ Missing | 5% | References exist, not implemented |
 | **Frontend** | ❌ Missing | 0% | Intentionally removed for v0.1.0 |
-| **Build/Packaging** | ✅ Complete | 80% | Works but needs CI/CD |
 | **Security** | ❌ Missing | 0% | Not addressed yet |
 
 ### Strengths ✅
 1. **Solid Foundation:** v0.1.0 components are well-built and tested
-2. **Good Architecture:** Clear separation of concerns (backend, launcher, sensors)
+2. **Good Architecture:** Clear separation of concerns (backend, sensors)
 3. **Excellent Documentation:** Comprehensive guides for installation and development
 4. **Privacy-First Design:** All processing local, no cloud dependencies
 5. **Modern Tech Stack:** FastAPI, CustomTkinter, SQLite
@@ -929,10 +848,8 @@ All dependencies (including 2GB ML libraries) were required.
 ### For Users (If Released Today)
 
 **What Works:**
-- ✅ Desktop launcher with GUI
 - ✅ Backend API server
 - ✅ Database storage
-- ✅ Configuration management
 
 **What Doesn't Work:**
 - ❌ Real camera/microphone sensing
@@ -981,7 +898,6 @@ All dependencies (including 2GB ML libraries) were required.
 
 ### Technology
 - **FastAPI:** https://fastapi.tiangolo.com/
-- **CustomTkinter:** https://github.com/TomSchimansky/CustomTkinter
 - **DeepFace:** https://github.com/serengil/deepface
 - **SQLite:** https://www.sqlite.org/
 
@@ -989,7 +905,7 @@ All dependencies (including 2GB ML libraries) were required.
 
 ## 🎓 Conclusion
 
-CV-Mindcare is a **promising privacy-first wellness monitoring application** with a **solid v0.1.0 foundation**. The desktop launcher and backend API are well-built and tested, providing an excellent base for future development.
+CV-Mindcare is a **promising privacy-first wellness monitoring application** with a **solid v0.1.0 foundation**. The backend API is well-built and tested, providing an excellent base for future development.
 
 **Current State:**
 - ✅ Infrastructure: Excellent

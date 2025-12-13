@@ -40,10 +40,6 @@ dependencies = [
     "scipy>=1.10.0",
     "requests>=2.31.0",
     "httpx>=0.25.0",
-    "customtkinter>=5.2.0",
-    "pystray>=0.19.0",
-    "Pillow>=10.0.0",
-    "packaging>=23.0",
     "pyyaml>=6.0",
 ]
 
@@ -69,7 +65,6 @@ dev = [
     "flake8>=6.1.0",
     "mypy>=1.7.0",
     "pre-commit>=3.5.0",
-    "pyinstaller>=6.0.0",
 ]
 
 # Raspberry Pi optimized packages
@@ -92,12 +87,11 @@ Repository = "https://github.com/Salman-A-Alsahli/CV-Mindcare"
 Issues = "https://github.com/Salman-A-Alsahli/CV-Mindcare/issues"
 
 [project.scripts]
-cv-mindcare = "launcher.launcher:main"
 cvmindcare-api = "backend.app:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["backend*", "frontend*", "launcher*"]
+include = ["backend*", "frontend*"]
 exclude = ["tests*", "docs*", "build*", "dist*"]
 
 [tool.pytest.ini_options]
@@ -148,8 +142,6 @@ strict_equality = true
 
 [[tool.mypy.overrides]]
 module = [
-    "customtkinter.*",
-    "pystray.*",
     "deepface.*",
     "cv2.*",
     "sounddevice.*",
