@@ -960,5 +960,182 @@ async def get_correlation_analysis(days: int = 7) -> Dict[str, object]:
         )
 
 
+# ============================================================================
+# Context Engine Endpoints (Phase 8)
+# ============================================================================
+
+# Global context engine instance
+_context_engine = None
+
+
+def get_context_engine():
+    """Get or create context engine instance."""
+    global _context_engine
+    if _context_engine is None:
+        from .context_engine import ContextEngine
+
+        _context_engine = ContextEngine()
+    return _context_engine
+
+
+@app.get("/api/context/wellness_score")
+async def get_wellness_score(days: int = 1) -> Dict[str, object]:
+    """
+    Get overall wellness score based on sensor data.
+
+    Args:
+        days: Number of days to analyze (default: 1)
+
+    Returns:
+        Wellness score (0-100) with rating, components, and message
+    """
+    if days < 1 or days > 365:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Days must be between 1 and 365"
+        )
+
+    try:
+        context_engine = get_context_engine()
+        score_data = context_engine.calculate_wellness_score(days=days)
+        return score_data
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Wellness score calculation failed: {str(e)}",
+        )
+
+
+@app.get("/api/context/recommendations")
+async def get_recommendations(days: int = 7, limit: int = 10, priority: Optional[str] = None) -> Dict[str, object]:
+    """
+    Get personalized wellness recommendations.
+
+    Args:
+        days: Number of days of data to analyze (default: 7)
+        limit: Maximum number of recommendations (default: 10)
+        priority: Filter by priority level (high/medium/low, optional)
+
+    Returns:
+        List of recommendations with actions and impact
+    """
+    if days < 1 or days > 365:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Days must be between 1 and 365"
+        )
+    
+    if limit < 1 or limit > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Limit must be between 1 and 100"
+        )
+    
+    if priority and priority not in ["high", "medium", "low"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Priority must be one of: high, medium, low",
+        )
+
+    try:
+        context_engine = get_context_engine()
+        recommendations = context_engine.generate_recommendations(
+            days=days, limit=limit, priority_filter=priority
+        )
+        return recommendations
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Recommendations generation failed: {str(e)}",
+        )
+
+
+@app.get("/api/context/patterns")
+async def get_patterns(days: int = 14, pattern_type: str = "all") -> Dict[str, object]:
+    """
+    Detect patterns in sensor data.
+
+    Args:
+        days: Number of days to analyze (default: 14)
+        pattern_type: Type of patterns to detect (all/recurring/time_based/trends)
+
+    Returns:
+        List of detected patterns with descriptions and recommendations
+    """
+    if days < 1 or days > 365:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Days must be between 1 and 365"
+        )
+    
+    valid_types = ["all", "recurring", "time_based", "trends"]
+    if pattern_type not in valid_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid pattern_type. Must be one of: {valid_types}",
+        )
+
+    try:
+        context_engine = get_context_engine()
+        patterns = context_engine.detect_patterns(days=days, pattern_type=pattern_type)
+        return patterns
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Pattern detection failed: {str(e)}",
+        )
+
+
+class FeedbackData(BaseModel):
+    """Model for recommendation feedback."""
+    
+    recommendation_id: str
+    helpful: bool
+    implemented: bool = False
+    comment: Optional[str] = None
+
+
+@app.post("/api/context/feedback", status_code=status.HTTP_201_CREATED)
+async def submit_feedback(feedback: FeedbackData) -> Dict[str, str]:
+    """
+    Submit feedback on a recommendation.
+
+    Args:
+        feedback: Feedback data including recommendation ID and user input
+
+    Returns:
+        Confirmation message
+    """
+    try:
+        context_engine = get_context_engine()
+        result = context_engine.submit_feedback(
+            recommendation_id=feedback.recommendation_id,
+            helpful=feedback.helpful,
+            implemented=feedback.implemented,
+            comment=feedback.comment,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Feedback submission failed: {str(e)}",
+        )
+
+
+@app.get("/api/context/baselines")
+async def get_baselines() -> Dict[str, object]:
+    """
+    Get personalized baseline values for the user.
+
+    Returns:
+        Baseline values with confidence levels and recommendations
+    """
+    try:
+        context_engine = get_context_engine()
+        baselines = context_engine.get_baselines()
+        return baselines
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Baseline retrieval failed: {str(e)}",
+        )
+
+
 if __name__ == "__main__":
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

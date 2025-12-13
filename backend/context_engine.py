@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
 import statistics
 
-from backend.database import Database
+from .database import Database, DB_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -44,13 +44,15 @@ class ContextEngine:
     MIN_SAMPLES_FOR_BASELINE = 20
     BASELINE_CONFIDENCE_THRESHOLD = 0.7
 
-    def __init__(self, db_path: str = "data/cv_mindcare.db"):
+    def __init__(self, db_path: str = None):
         """
         Initialize context engine.
 
         Args:
-            db_path: Path to SQLite database
+            db_path: Path to SQLite database (uses default if not specified)
         """
+        if db_path is None:
+            db_path = DB_PATH
         self.db = Database(db_path)
         self.baselines = {}
         self.feedback_history = []

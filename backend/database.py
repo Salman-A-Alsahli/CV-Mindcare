@@ -175,5 +175,79 @@ def get_system_stats() -> Dict[str, Any]:
     }
 
 
+class Database:
+    """Database class wrapper for ContextEngine compatibility.
+    
+    This class provides a high-level interface for the ContextEngine to access
+    sensor data from the SQLite database. It wraps the lower-level database
+    functions to provide a more convenient API.
+    
+    Thread Safety:
+        Each method creates its own database connection using the context manager
+        pattern, making it safe to use from multiple threads.
+    
+    Methods:
+        get_greenery_data: Retrieve greenery sensor measurements
+        get_noise_data: Retrieve noise sensor measurements
+    """
+
+    def __init__(self, db_path: str = DB_PATH):
+        """Initialize Database wrapper.
+        
+        Args:
+            db_path: Path to SQLite database file
+        """
+        self.db_path = db_path
+        # Ensure database exists
+        init_db()
+
+    def _get_sensor_data(self, sensor_type: str, since: Optional[datetime] = None) -> List[tuple]:
+        """Get sensor data of a specific type since specified time.
+        
+        Args:
+            sensor_type: Type of sensor data to retrieve (e.g., 'greenery', 'noise')
+            since: Get data after this datetime (optional)
+            
+        Returns:
+            List of tuples: (timestamp, value)
+        """
+        with closing(_get_connection()) as conn:
+            if since:
+                since_str = since.strftime("%Y-%m-%d %H:%M:%S")
+                rows = conn.execute(
+                    "SELECT timestamp, value FROM sensor_data WHERE sensor_type = ? AND timestamp >= ? ORDER BY timestamp",
+                    (sensor_type, since_str)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT timestamp, value FROM sensor_data WHERE sensor_type = ? ORDER BY timestamp",
+                    (sensor_type,)
+                ).fetchall()
+        
+        return [(row[0], row[1]) for row in rows]
+
+    def get_greenery_data(self, since: Optional[datetime] = None) -> List[tuple]:
+        """Get greenery sensor data since specified time.
+        
+        Args:
+            since: Get data after this datetime (optional)
+            
+        Returns:
+            List of tuples: (timestamp, greenery_percentage)
+        """
+        return self._get_sensor_data("greenery", since)
+
+    def get_noise_data(self, since: Optional[datetime] = None) -> List[tuple]:
+        """Get noise sensor data since specified time.
+        
+        Args:
+            since: Get data after this datetime (optional)
+            
+        Returns:
+            List of tuples: (timestamp, noise_level)
+        """
+        return self._get_sensor_data("noise", since)
+
+
 # Ensure database exists when module is imported
 init_db()
