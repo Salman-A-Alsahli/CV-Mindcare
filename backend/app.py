@@ -26,8 +26,8 @@ from .database import (
 
 app = FastAPI(
     title="CV-Mindcare API",
-    description="Backend API for CV-Mindcare system",
-    version="0.2.0",
+    description="Privacy-first wellness monitoring system",
+    version="1.0.0",
 )
 
 app.add_middleware(

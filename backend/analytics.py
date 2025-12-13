@@ -307,6 +307,7 @@ class Analytics:
             return {
                 "coefficient": 0.0,
                 "strength": "insufficient_data",
+                "direction": "none",
                 "message": "Not enough data points for correlation analysis",
             }
 
@@ -317,6 +318,7 @@ class Analytics:
             return {
                 "coefficient": 0.0,
                 "strength": "insufficient_aligned_data",
+                "direction": "none",
                 "message": "Not enough aligned data points for correlation",
             }
 
