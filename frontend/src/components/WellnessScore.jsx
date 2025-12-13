@@ -1,4 +1,4 @@
-import { useQuery } from '@tantml:query';
+import { useQuery } from '@tanstack/react-query';
 import { Heart, TrendingUp, TrendingDown } from 'lucide-react';
 import { getWellnessScore } from '../services/api';
 import { getRatingColor } from '../utils/formatters';
