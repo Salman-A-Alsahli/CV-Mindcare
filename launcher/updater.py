@@ -112,9 +112,7 @@ class Updater:
                 # Look for Windows installer in assets
                 assets = data.get("assets", [])
                 for asset in assets:
-                    if asset.get("name", "").endswith(".exe") or asset.get("name", "").endswith(
-                        ".zip"
-                    ):
+                    if asset.get("name", "").endswith((".exe", ".zip")):
                         download_url = asset.get("browser_download_url", download_url)
                         break
 

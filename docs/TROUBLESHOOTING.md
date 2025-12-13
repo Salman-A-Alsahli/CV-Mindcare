@@ -69,7 +69,7 @@ pip install -e .[dev,ml]
 pip install opencv-python sounddevice
 
 # 3. Clean pytest cache
-rm -rf .pytest_cache __pycache__ */\_\_pycache\_\_
+rm -rf .pytest_cache __pycache__ */__pycache__
 pytest --cache-clear
 
 # 4. Run with verbose output

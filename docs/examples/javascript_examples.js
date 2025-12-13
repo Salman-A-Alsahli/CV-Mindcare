@@ -301,8 +301,12 @@ async function runAllExamples() {
     }
 }
 
-// Run if executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run if executed directly (works in Node.js with ES modules)
+if (typeof require !== 'undefined' && require.main === module) {
+    // CommonJS
+    runAllExamples().catch(console.error);
+} else if (import.meta.url === `file://${process.argv[1]}`) {
+    // ES Modules
     runAllExamples().catch(console.error);
 }
 

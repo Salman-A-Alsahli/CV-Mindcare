@@ -38,7 +38,7 @@ sensor:
 
 Replace `YOUR_IP` with CV-Mindcare server IP address.
 
-See full integration guide at: [docs/integrations/home-assistant.md](home-assistant.md)
+For complete integration examples, configuration, automations, and dashboard cards, see the full Home Assistant documentation on the CV-Mindcare wiki.
 
 ---
 
