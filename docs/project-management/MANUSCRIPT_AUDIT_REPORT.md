@@ -1,6 +1,6 @@
 # CV-Mindcare Manuscript Audit Report
 
-**Date:** December 13, 2024  
+**Date:** December 13, 2025  
 **Auditor:** GitHub Copilot Workspace  
 **Repository Version:** v0.3.0  
 **Audit Scope:** IT492-Report_Template[1]100.docx vs Current Implementation
@@ -579,5 +579,5 @@ All identified gaps have clear remediation paths and can be addressed in the v0.
 
 ---
 
-**Audit Completed:** December 13, 2024  
-**Next Review:** After v0.3.0 release (January 2025)
+**Audit Completed:** December 13, 2025  
+**Next Review:** After v0.3.0 release (January 2026)
