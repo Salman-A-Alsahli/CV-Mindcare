@@ -1,0 +1,201 @@
+# CV-Mindcare Database Configuration
+# SQLite database settings, connection pooling, backup, and optimization
+
+# Database Connection
+connection:
+  # Database file path (relative to backend/)
+  path: cv_mindcare.db
+  
+  # Connection pool settings
+  pool:
+    max_connections: 5
+    timeout: 30.0  # seconds
+  
+  # SQLite pragmas for optimization
+  pragmas:
+    journal_mode: WAL        # Write-Ahead Logging for better concurrency
+    synchronous: NORMAL      # Balance between speed and safety
+    cache_size: -64000       # 64 MB cache (negative = KB)
+    foreign_keys: ON         # Enforce foreign key constraints
+    temp_store: MEMORY       # Store temp tables in memory
+    mmap_size: 268435456     # 256 MB memory-mapped I/O
+
+
+# Schema & Migrations
+schema:
+  # Auto-create tables on startup
+  auto_create: true
+  
+  # Schema version tracking
+  versioning:
+    enabled: true
+    table: schema_version
+  
+  # Tables to create
+  tables:
+    - sensor_data
+    - face_detection
+    - sound_analysis
+    - air_quality
+    - schema_version
+
+
+# Indexes
+indexes:
+  # Automatically create indexes
+  auto_create: true
+  
+  # Index definitions
+  definitions:
+    # Sensor data indexes
+    - name: idx_sensor_data_timestamp
+      table: sensor_data
+      columns: [timestamp]
+    
+    - name: idx_sensor_data_type
+      table: sensor_data
+      columns: [sensor_type]
+    
+    - name: idx_sensor_data_type_timestamp
+      table: sensor_data
+      columns: [sensor_type, timestamp]
+    
+    # Air quality indexes
+    - name: idx_air_quality_timestamp
+      table: air_quality
+      columns: [timestamp]
+    
+    - name: idx_air_quality_level
+      table: air_quality
+      columns: [air_quality_level]
+    
+    - name: idx_air_quality_level_timestamp
+      table: air_quality
+      columns: [air_quality_level, timestamp]
+
+
+# Data Retention Policy
+retention:
+  enabled: true
+  
+  # Cleanup schedule
+  cleanup_interval: 86400  # seconds (24 hours)
+  
+  # Retention periods (in days)
+  periods:
+    sensor_data: 90        # Keep sensor data for 90 days
+    face_detection: 90
+    sound_analysis: 90
+    air_quality: 90
+    
+    # Aggregated/summary data
+    aggregated_data: 365   # Keep for 1 year
+
+
+# Backup Configuration
+backup:
+  enabled: true
+  
+  # Backup schedule
+  interval: 86400  # seconds (24 hours, backup daily)
+  
+  # Backup location
+  directory: backups/
+  
+  # Backup retention
+  keep_count: 7  # Keep last 7 backups
+  
+  # Backup format
+  compression: true
+  compression_level: 6  # gzip compression (0-9)
+  
+  # Backup naming
+  filename_format: "cv_mindcare_backup_%Y%m%d_%H%M%S.db"
+
+
+# Database Maintenance
+maintenance:
+  # Automatic VACUUM
+  vacuum:
+    enabled: true
+    interval: 604800  # seconds (7 days, weekly)
+  
+  # ANALYZE for query optimization
+  analyze:
+    enabled: true
+    interval: 86400  # seconds (24 hours, daily)
+  
+  # Rebuild indexes
+  reindex:
+    enabled: false
+    interval: 2592000  # seconds (30 days, monthly)
+  
+  # Check database integrity
+  integrity_check:
+    enabled: true
+    interval: 604800  # seconds (7 days, weekly)
+
+
+# Query Optimization
+optimization:
+  # Query timeout
+  query_timeout: 30.0  # seconds
+  
+  # Prepared statements
+  use_prepared_statements: true
+  
+  # Result caching
+  cache_results: true
+  cache_ttl: 300  # seconds (5 minutes)
+  
+  # Batch operations
+  batch_size: 100
+  
+  # Transaction settings
+  transaction_timeout: 10.0  # seconds
+
+
+# Monitoring
+monitoring:
+  # Query performance logging
+  log_slow_queries: true
+  slow_query_threshold: 1.0  # seconds
+  
+  # Database statistics
+  collect_stats: true
+  stats_interval: 300  # seconds (5 minutes)
+  
+  # Metrics to track
+  metrics:
+    - query_count
+    - query_duration
+    - connection_count
+    - database_size
+    - table_row_counts
+
+
+# Error Handling
+error_handling:
+  # Retry failed operations
+  retry_enabled: true
+  max_retries: 3
+  retry_delay: 1.0  # seconds
+  
+  # Transaction rollback
+  auto_rollback: true
+  
+  # Error logging
+  log_errors: true
+  log_level: ERROR
+
+
+# Development Settings
+development:
+  # Echo SQL queries (debug mode)
+  echo_sql: false
+  
+  # Seed test data
+  seed_data: false
+  
+  # Reset database on startup
+  reset_on_startup: false

@@ -1,0 +1,126 @@
+# CV-Mindcare Sensor Configuration
+# All sensor settings, thresholds, and calibration parameters
+
+# Camera Sensor Configuration
+camera:
+  # Backend selection: 'opencv', 'picamera', 'auto'
+  backend: auto
+  
+  # Camera device index or path
+  device_index: 0
+  
+  # Frame resolution
+  resolution:
+    width: 640
+    height: 480
+  
+  # Greenery detection HSV parameters
+  greenery_detection:
+    # HSV color range for green detection
+    lower_hsv: [35, 40, 40]   # Lower bound for green
+    upper_hsv: [85, 255, 255] # Upper bound for green
+    
+    # Minimum greenery percentage for "nature present" alert
+    nature_threshold: 5.0
+  
+  # Performance settings
+  capture_timeout: 5.0  # seconds
+  
+  # Mock mode (for development without hardware)
+  mock_mode: false
+
+
+# Microphone Sensor Configuration
+microphone:
+  # Backend selection: 'sounddevice', 'pyaudio', 'auto'
+  backend: auto
+  
+  # Audio device (null for default)
+  device: null
+  
+  # Sample parameters
+  sample_rate: 44100  # Hz
+  duration: 1.0       # seconds per sample
+  channels: 1         # mono
+  
+  # dB calculation parameters
+  db_reference: 20.0  # μPa (standard reference)
+  
+  # Noise level thresholds
+  noise_thresholds:
+    very_quiet: 30    # dB
+    quiet: 40
+    moderate: 60
+    loud: 80
+    very_loud: 100
+  
+  # Performance settings
+  buffer_size: 1024
+  
+  # Mock mode (for development without hardware)
+  mock_mode: false
+
+
+# Air Quality Sensor Configuration (MQ-135)
+air_quality:
+  # Backend selection: 'serial', 'gpio', 'auto'
+  backend: auto
+  
+  # Serial connection (for USB adapters)
+  serial:
+    port: /dev/ttyUSB0
+    baudrate: 9600
+    timeout: 1.0
+  
+  # GPIO/ADC connection (for Raspberry Pi)
+  gpio:
+    # ADC channel (0-7 for MCP3008)
+    channel: 0
+    
+    # SPI bus configuration
+    spi_bus: 0
+    spi_device: 0
+  
+  # Calibration
+  calibration_factor: 1.0  # Adjust based on known gas concentration
+  
+  # Sampling
+  sample_count: 10         # Number of readings to average
+  
+  # Air quality level thresholds (PPM)
+  thresholds:
+    excellent: 50    # 0-50 PPM
+    good: 100        # 51-100 PPM
+    moderate: 150    # 101-150 PPM
+    poor: 200        # 151-200 PPM
+    # >200 PPM is hazardous
+  
+  # Alert settings
+  alerts:
+    enabled: true
+    poor_threshold: 150      # PPM level to trigger poor air quality alert
+    hazardous_threshold: 200 # PPM level to trigger hazardous alert
+  
+  # Mock mode (for development without hardware)
+  mock_mode: false
+
+
+# Global Sensor Settings
+global:
+  # Sensor manager configuration
+  manager:
+    polling_interval: 5.0  # seconds between sensor reads
+    auto_start: false      # auto-start sensors on manager init
+    auto_recover: true     # auto-restart failed sensors
+    max_retries: 3         # max sensor restart attempts
+  
+  # Health monitoring
+  health_check_interval: 60.0  # seconds
+  
+  # Data retention
+  cleanup_interval: 3600  # seconds (1 hour)
+  max_data_age_days: 90   # days to keep sensor data
+  
+  # Performance
+  enable_caching: true
+  cache_ttl: 300  # seconds (5 minutes)
