@@ -88,7 +88,7 @@ Welcome to CV-Mindcare! This guide will help you install and set up the system o
 
 4. **Verify Installation**
    ```powershell
-   python -c "import customtkinter, cv2, fastapi, sounddevice; print('All dependencies installed!')"
+   python -c "import fastapi, uvicorn, sqlalchemy; print('Core dependencies installed!')"
    ```
 
 ### Method 2: Manual Download
@@ -102,7 +102,7 @@ Welcome to CV-Mindcare! This guide will help you install and set up the system o
 
 ## First Run
 
-### Starting the Launcher
+### Starting the Backend
 
 1. **Activate Virtual Environment** (if not already active)
    ```powershell
