@@ -1,0 +1,204 @@
+# CV-Mindcare API Configuration
+# API server settings, CORS, rate limits, and security
+
+# Server Configuration
+server:
+  host: 127.0.0.1
+  port: 8000
+  workers: 1  # Uvicorn worker processes
+  reload: false  # Auto-reload on code changes (dev only)
+  
+  # Timeouts
+  timeout: 60  # seconds
+  keep_alive: 5  # seconds
+  
+  # Request limits
+  max_request_size: 10485760  # 10 MB
+
+
+# CORS Configuration
+cors:
+  enabled: true
+  
+  # Allowed origins
+  allow_origins:
+    - http://localhost:3000
+    - http://127.0.0.1:3000
+    - http://localhost:8000
+  
+  # Methods and headers
+  allow_methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  
+  allow_headers:
+    - "*"
+  
+  allow_credentials: true
+  
+  # Preflight cache
+  max_age: 600  # seconds
+
+
+# Rate Limiting
+rate_limiting:
+  enabled: true
+  
+  # Global rate limits
+  global:
+    requests_per_minute: 60
+    requests_per_hour: 1000
+  
+  # Endpoint-specific limits
+  endpoints:
+    # Sensor capture endpoints (expensive operations)
+    "/api/sensors/*/capture":
+      requests_per_minute: 10
+      requests_per_hour: 100
+    
+    # General sensor data
+    "/api/sensors":
+      requests_per_minute: 30
+    
+    # Health check (unlimited)
+    "/api/health":
+      requests_per_minute: 0  # 0 = unlimited
+
+
+# API Documentation
+docs:
+  enabled: true
+  
+  # Swagger UI
+  swagger_ui_path: /docs
+  
+  # ReDoc
+  redoc_path: /redoc
+  
+  # OpenAPI JSON
+  openapi_path: /openapi.json
+  
+  # API metadata
+  title: CV-Mindcare API
+  description: Backend API for CV-Mindcare mental health monitoring system
+  version: 0.2.0
+  contact:
+    name: CV-Mindcare Development Team
+    email: support@cv-mindcare.local
+  
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+
+# Security
+security:
+  # API key authentication (optional)
+  api_key:
+    enabled: false
+    header_name: X-API-Key
+  
+  # HTTPS settings
+  https:
+    enabled: false  # Enable for production
+    redirect_http: false
+    
+    # SSL/TLS certificates
+    cert_file: /path/to/cert.pem
+    key_file: /path/to/key.pem
+  
+  # Security headers
+  headers:
+    x_content_type_options: nosniff
+    x_frame_options: DENY
+    x_xss_protection: "1; mode=block"
+    strict_transport_security: "max-age=31536000; includeSubDomains"
+
+
+# Middleware
+middleware:
+  # Compression
+  gzip:
+    enabled: true
+    minimum_size: 1000  # bytes
+  
+  # Request logging
+  logging:
+    enabled: true
+    format: '%(client_addr)s - "%(request_line)s" %(status_code)s'
+  
+  # Trusted proxy headers
+  proxy:
+    enabled: false
+    trusted_hosts: []
+
+
+# Error Handling
+error_handling:
+  # Include exception details in responses
+  include_details: false  # Set to true only in development
+  
+  # Custom error messages
+  custom_messages:
+    400: "Bad Request: Invalid input data"
+    404: "Not Found: The requested resource does not exist"
+    500: "Internal Server Error: Please try again later"
+
+
+# WebSocket Configuration
+websocket:
+  # Connection settings
+  ping_interval: 20  # seconds
+  ping_timeout: 10   # seconds
+  
+  # Message limits
+  max_message_size: 1048576  # 1 MB
+  
+  # Compression
+  compression: true
+  
+  # Heartbeat
+  heartbeat_interval: 30  # seconds
+
+
+# Monitoring & Metrics
+monitoring:
+  # Health check endpoint
+  health_check:
+    enabled: true
+    path: /api/health
+  
+  # Metrics collection
+  metrics:
+    enabled: false
+    path: /metrics
+    
+    # Prometheus format
+    prometheus:
+      enabled: false
+  
+  # Request tracing
+  tracing:
+    enabled: false
+    sample_rate: 0.1  # 10% of requests
+
+
+# Background Tasks
+background_tasks:
+  # Sensor polling
+  sensor_polling:
+    enabled: true
+    interval: 5.0  # seconds
+  
+  # Database cleanup
+  database_cleanup:
+    enabled: true
+    interval: 3600  # seconds (1 hour)
+  
+  # Analytics computation
+  analytics_update:
+    enabled: true
+    interval: 300  # seconds (5 minutes)

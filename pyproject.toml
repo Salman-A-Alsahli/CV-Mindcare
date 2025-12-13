@@ -1,15 +1,199 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=65.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cv_mindcare"
-version = "0.1.0"
-description = "Computer Vision mental-health assistant — sensor sampling + local LLM guidance"
+name = "cv-mindcare"
+version = "0.3.0"
+description = "Privacy-first wellness monitoring with camera, microphone, and air quality sensors"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
+authors = [
+    {name = "CV-Mindcare Team", email = "cv-mindcare@example.com"}
+]
+keywords = ["wellness", "mental-health", "sensors", "privacy", "monitoring", "air-quality"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Home Automation",
+]
+
+# Base dependencies - required for core functionality
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "websockets>=12.0",
+    "pydantic>=2.0.0",
+    "psutil>=5.9.0",
+    "sqlalchemy>=2.0.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scipy>=1.10.0",
+    "requests>=2.31.0",
+    "httpx>=0.25.0",
+    "customtkinter>=5.2.0",
+    "pystray>=0.19.0",
+    "Pillow>=10.0.0",
+    "packaging>=23.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# ML/AI features - emotion detection, advanced analytics
+ml = [
+    "torch>=2.0.0",
+    "accelerate>=0.24.0",
+    "safetensors>=0.4.0",
+    "transformers>=4.35.0",
+    "deepface>=0.0.79",
+    "sounddevice>=0.4.6",
+    "opencv-python>=4.8.0",
+]
+
+# Development tools - testing, linting, formatting
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.12.0",
+    "black>=23.0.0",
+    "flake8>=6.1.0",
+    "mypy>=1.7.0",
+    "pre-commit>=3.5.0",
+    "pyinstaller>=6.0.0",
+]
+
+# Raspberry Pi optimized packages
+rpi = [
+    "tflite-runtime>=2.14.0; platform_machine=='armv7l' or platform_machine=='aarch64'",
+    "picamera2>=0.3.0; platform_machine=='armv7l' or platform_machine=='aarch64'",
+    "RPi.GPIO>=0.7.1; platform_machine=='armv7l' or platform_machine=='aarch64'",
+    "spidev>=3.6; platform_machine=='armv7l' or platform_machine=='aarch64'",
+]
+
+# Complete installation with all features
+all = [
+    "cv-mindcare[ml,dev,rpi]",
+]
+
+[project.urls]
+Homepage = "https://github.com/Salman-A-Alsahli/CV-Mindcare"
+Documentation = "https://github.com/Salman-A-Alsahli/CV-Mindcare/tree/main/docs"
+Repository = "https://github.com/Salman-A-Alsahli/CV-Mindcare"
+Issues = "https://github.com/Salman-A-Alsahli/CV-Mindcare/issues"
+
+[project.scripts]
+cv-mindcare = "launcher.launcher:main"
+cvmindcare-api = "backend.app:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-exclude = ["tests*"]
+include = ["backend*", "frontend*", "launcher*"]
+exclude = ["tests*", "docs*", "build*", "dist*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--cov=backend",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py39', 'py310', 'py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+  | __pycache__
+)/
+'''
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "customtkinter.*",
+    "pystray.*",
+    "deepface.*",
+    "cv2.*",
+    "sounddevice.*",
+]
+ignore_missing_imports = true
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "build",
+    "dist",
+]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.coverage.run]
+source = ["backend"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]

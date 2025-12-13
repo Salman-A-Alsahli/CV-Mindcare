@@ -14,9 +14,12 @@ from .database import (
     insert_sensor_data,
     insert_face_detection,
     insert_sound_analysis,
+    insert_air_quality,
     get_recent_sensor_data,
     get_latest_face_detection,
     get_latest_sound_analysis,
+    get_latest_air_quality,
+    get_recent_air_quality,
     get_sensor_status,
     get_system_stats,
 )
@@ -52,6 +55,14 @@ class SoundSample(BaseModel):
     timestamp: Optional[str] = None
 
 
+class AirQualityData(BaseModel):
+    """Air quality measurement data."""
+    ppm: float
+    air_quality_level: str
+    raw_value: Optional[float] = None
+    timestamp: Optional[str] = None
+
+
 @app.on_event("startup")
 async def startup() -> None:
     init_db()
@@ -76,10 +87,20 @@ async def health() -> Dict[str, str]:
 async def get_sensors() -> Dict:
     status_map = get_sensor_status()
     recent = get_recent_sensor_data(limit=10)
+    
+    # Check air quality sensor availability
+    air_quality_available = False
+    try:
+        from .sensors.air_quality import check_air_quality_available
+        air_quality_available = check_air_quality_available()
+    except Exception:
+        pass
+    
     return {
         "status": {
             "camera": status_map.get("camera", False),
             "microphone": status_map.get("microphone", False),
+            "air_quality": air_quality_available,
             "system_resources": True,
         },
         "recent": recent,
@@ -319,6 +340,130 @@ async def post_noise_data(db_level: float) -> Dict[str, str]:
     
     insert_sensor_data("noise", db_level)
     return {"message": "noise data recorded"}
+
+
+# Air Quality Sensor Endpoints (Phase 1: MQ-135 Integration)
+
+@app.get("/api/sensors/air_quality/status")
+async def get_air_quality_status() -> Dict[str, object]:
+    """
+    Get air quality sensor status.
+    
+    Returns sensor availability and configuration information.
+    """
+    try:
+        from .sensors.air_quality import check_air_quality_available
+        available = check_air_quality_available()
+        return {
+            "sensor_type": "air_quality",
+            "available": available,
+            "backend": "mq135",
+            "status": "available" if available else "unavailable",
+        }
+    except Exception as e:
+        return {
+            "sensor_type": "air_quality",
+            "available": False,
+            "status": "error",
+            "error": str(e),
+        }
+
+
+@app.get("/api/sensors/air_quality/capture")
+async def capture_air_quality_data() -> Dict[str, object]:
+    """
+    Capture air quality data from MQ-135 sensor.
+    
+    Returns PPM concentration and air quality level classification.
+    Automatically falls back to mock mode if hardware unavailable.
+    """
+    try:
+        from .sensors.air_quality import get_air_quality_reading
+        data = get_air_quality_reading()
+        
+        # Store air quality data in database
+        if not data.get('mock_mode', False):
+            ppm = data.get('ppm', 0.0)
+            air_quality_level = data.get('air_quality_level', 'unknown')
+            raw_value = data.get('raw_value', None)
+            insert_air_quality(ppm, air_quality_level, raw_value)
+        
+        return data
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Air quality capture failed: {str(e)}"
+        )
+
+
+@app.post("/api/sensors/air_quality/data", status_code=status.HTTP_201_CREATED)
+async def post_air_quality_data(payload: AirQualityData) -> Dict[str, str]:
+    """
+    Manually submit air quality measurement data.
+    
+    Args:
+        payload: Air quality data with PPM and level classification
+    
+    Returns:
+        Confirmation message
+    """
+    # Validate air quality level
+    valid_levels = ['excellent', 'good', 'moderate', 'poor', 'hazardous']
+    if payload.air_quality_level.lower() not in valid_levels:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid air quality level. Must be one of: {valid_levels}"
+        )
+    
+    if payload.ppm < 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="PPM must be non-negative"
+        )
+    
+    insert_air_quality(payload.ppm, payload.air_quality_level, payload.raw_value)
+    return {"message": "air quality data recorded"}
+
+
+@app.get("/api/air_quality")
+async def get_air_quality() -> Dict[str, object]:
+    """
+    Get latest air quality measurement.
+    
+    Returns:
+        Latest PPM reading, air quality level, and timestamp
+    """
+    latest = get_latest_air_quality()
+    return {
+        "ppm": latest["ppm"] if latest else 0.0,
+        "air_quality_level": latest["air_quality_level"] if latest else "unknown",
+        "raw_value": latest.get("raw_value") if latest else None,
+        "last_measurement": latest["timestamp"] if latest else None,
+    }
+
+
+@app.get("/api/air_quality/recent")
+async def get_recent_air_quality_data(limit: int = 10) -> Dict[str, object]:
+    """
+    Get recent air quality measurements.
+    
+    Args:
+        limit: Maximum number of recent measurements to return (default: 10)
+    
+    Returns:
+        List of recent air quality measurements
+    """
+    if limit < 1 or limit > 1000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Limit must be between 1 and 1000"
+        )
+    
+    recent = get_recent_air_quality(limit=limit)
+    return {
+        "count": len(recent),
+        "measurements": recent
+    }
 
 
 @app.get("/api/context")

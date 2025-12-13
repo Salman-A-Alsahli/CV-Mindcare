@@ -1,80 +1,50 @@
-# Documentation
+# CV-Mindcare Documentation
 
-This directory contains project documentation for CV-Mindcare.
+Welcome to the CV-Mindcare documentation hub! This directory contains comprehensive guides for users, developers, and deployment.
 
-## Contents
+## 📚 Documentation Structure
 
-### Architecture Documentation
-- System design and architecture decisions
-- Data flow diagrams
-- Component interaction diagrams
+### Getting Started
+- **[Quick Start Guide](getting-started/quick-start.md)** - Get up and running in 5 minutes
+- **[Installation Guide](getting-started/installation.md)** - Detailed installation instructions
+- **[Hardware Setup](getting-started/hardware-setup.md)** - Camera, microphone, and MQ-135 sensor setup
 
-### API Documentation
-- REST API endpoint specifications
-- Request/response schemas
-- Authentication and authorization
+### User Guide
+- **[Web Dashboard](user-guide/web-dashboard.md)** - Using the React web interface
+- **[Desktop Application](user-guide/desktop-app.md)** - Using the GUI launcher
+- **[Features Overview](user-guide/features.md)** - Complete feature documentation
 
-### Development Guides
-- Setup instructions
-- Coding standards and conventions
-- Contribution guidelines
+### Development
+- **[Architecture](development/architecture.md)** - System architecture and design decisions
+- **[Contributing Guide](development/contributing.md)** - How to contribute to the project
+- **[Testing Guide](development/testing.md)** - Testing practices and guidelines
+- **[API Reference](development/api-reference.md)** - Complete API documentation
 
-### User Documentation
-- Installation guide
-- User manual
-- Troubleshooting guide
+### Deployment
+- **[Raspberry Pi Deployment](deployment/raspberry-pi.md)** - Deploy on Raspberry Pi 5
+- **[Docker Deployment](deployment/docker.md)** - Containerized deployment
+- **[Production Checklist](deployment/production.md)** - Production deployment guide
 
-### Deployment Documentation
-- Deployment procedures
-- Configuration management
-- System requirements
+### Project Management
+- **[Milestones](project-management/milestones.md)** - Project milestones and roadmap
+- **[Changelog](project-management/changelog.md)** - Version history and changes
+- **[Backlog](project-management/backlog.md)** - Future features and improvements
 
-## Documentation Structure (Planned)
+## 🔗 Quick Links
 
-```
-docs/
-├── architecture/
-│   ├── system-design.md
-│   ├── data-flow.md
-│   └── component-diagram.md
-├── api/
-│   ├── endpoints.md
-│   ├── schemas.md
-│   └── examples.md
-├── development/
-│   ├── setup.md
-│   ├── coding-standards.md
-│   └── testing.md
-├── user/
-│   ├── installation.md
-│   ├── user-guide.md
-│   └── troubleshooting.md
-└── deployment/
-    ├── deployment-guide.md
-    └── configuration.md
-```
+- [Main README](../README.md)
+- [License](../LICENSE)
+- [GitHub Repository](https://github.com/Salman-A-Alsahli/CV-Mindcare)
 
-## Contributing to Documentation
+## 🆘 Need Help?
 
-- Use Markdown format
-- Include code examples where applicable
-- Keep documentation up-to-date with code changes
-- Add diagrams using Mermaid or similar tools
+- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/Salman-A-Alsahli/CV-Mindcare/issues)
+- **Discussions**: Join community discussions on [GitHub Discussions](https://github.com/Salman-A-Alsahli/CV-Mindcare/discussions)
 
-## Building Documentation
+## 📖 Documentation Versions
 
-(To be implemented - consider using MkDocs, Sphinx, or similar)
+This documentation is for **CV-Mindcare v0.3.0** (current development version).
 
-```bash
-# Example with MkDocs
-mkdocs build
-mkdocs serve
-```
+---
 
-## Documentation Standards
-
-- Clear and concise language
-- Step-by-step instructions
-- Screenshots for GUI components
-- Code examples with explanations
-- Version compatibility notes
+**Last Updated**: December 2025

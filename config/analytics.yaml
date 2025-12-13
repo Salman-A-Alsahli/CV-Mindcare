@@ -1,0 +1,258 @@
+# CV-Mindcare Analytics Configuration
+# Trend detection, anomaly detection, and data analysis settings
+
+# Aggregation Settings
+aggregation:
+  # Default aggregation period
+  default_period: hourly
+  
+  # Available periods
+  periods:
+    - hourly
+    - daily
+    - weekly
+    - monthly
+  
+  # Statistics to compute
+  statistics:
+    - count
+    - min
+    - max
+    - mean
+    - median
+    - stddev
+    - percentile_25
+    - percentile_75
+  
+  # Data retention for aggregates
+  retention_days:
+    hourly: 7      # Keep hourly aggregates for 7 days
+    daily: 90      # Keep daily aggregates for 90 days
+    weekly: 365    # Keep weekly aggregates for 1 year
+    monthly: 730   # Keep monthly aggregates for 2 years
+
+
+# Trend Detection
+trend_detection:
+  enabled: true
+  
+  # Minimum data points required for trend analysis
+  min_data_points: 10
+  
+  # Trend calculation method
+  method: linear_regression  # Options: linear_regression, moving_average
+  
+  # Trend thresholds
+  thresholds:
+    # Slope threshold for "stable" classification
+    stable_threshold: 0.05
+    
+    # R² confidence threshold
+    confidence_threshold: 0.5
+  
+  # Trend categories
+  categories:
+    strongly_increasing: 0.5   # slope > 0.5
+    increasing: 0.1            # slope > 0.1
+    stable: 0.0                # abs(slope) <= stable_threshold
+    decreasing: -0.1           # slope < -0.1
+    strongly_decreasing: -0.5  # slope < -0.5
+  
+  # Analysis periods
+  analysis_periods:
+    short_term: 7    # days
+    medium_term: 30  # days
+    long_term: 90    # days
+
+
+# Anomaly Detection
+anomaly_detection:
+  enabled: true
+  
+  # Detection method
+  method: statistical  # Options: statistical, isolation_forest, moving_average
+  
+  # Statistical method parameters
+  statistical:
+    # Standard deviation threshold
+    threshold_stddev: 2.0
+    
+    # Minimum data points for baseline
+    min_baseline_points: 30
+    
+    # Window size for rolling statistics
+    window_size: 24  # hours
+  
+  # Anomaly severity classification
+  severity_thresholds:
+    mild: 2.0      # 2 standard deviations
+    moderate: 3.0  # 3 standard deviations
+    severe: 4.0    # 4 standard deviations
+  
+  # Alert settings
+  alerts:
+    enabled: true
+    
+    # Minimum severity to trigger alert
+    min_severity: moderate
+
+
+# Correlation Analysis
+correlation:
+  enabled: true
+  
+  # Correlation method
+  method: pearson  # Options: pearson, spearman, kendall
+  
+  # Minimum data points for correlation
+  min_data_points: 10
+  
+  # Correlation strength thresholds
+  strength_thresholds:
+    very_strong: 0.8
+    strong: 0.6
+    moderate: 0.4
+    weak: 0.2
+    very_weak: 0.0
+  
+  # Sensor pairs to analyze
+  sensor_pairs:
+    - [greenery, noise]
+    - [air_quality, greenery]
+    - [air_quality, noise]
+
+
+# Pattern Recognition
+pattern_recognition:
+  enabled: false  # Advanced feature, disabled by default
+  
+  # Time-of-day patterns
+  time_patterns:
+    enabled: true
+    
+    # Time buckets (hours)
+    buckets:
+      - name: morning
+        hours: [6, 7, 8, 9, 10, 11]
+      
+      - name: afternoon
+        hours: [12, 13, 14, 15, 16, 17]
+      
+      - name: evening
+        hours: [18, 19, 20, 21, 22, 23]
+      
+      - name: night
+        hours: [0, 1, 2, 3, 4, 5]
+  
+  # Day-of-week patterns
+  weekly_patterns:
+    enabled: true
+    
+    # Weekday vs weekend comparison
+    weekday_weekend_split: true
+
+
+# Forecasting
+forecasting:
+  enabled: false  # Advanced feature, disabled by default
+  
+  # Forecasting method
+  # Note: ARIMA requires statsmodels library (pip install statsmodels)
+  # Exponential smoothing is lightweight and suitable for most use cases
+  method: exponential_smoothing  # Options: moving_average, exponential_smoothing, arima
+  
+  # Forecast horizon
+  horizon_hours: 24
+  
+  # Computational requirements:
+  # - moving_average: Minimal CPU, ~10ms per forecast
+  # - exponential_smoothing: Low CPU, ~50ms per forecast
+  # - arima: High CPU, ~500ms-2s per forecast (requires statsmodels)
+  
+  # Dependencies:
+  # - arima: pip install statsmodels scipy
+  # - Others: No additional dependencies
+  
+  # Confidence intervals
+  confidence_levels:
+    - 0.95
+    - 0.80
+
+
+# Data Quality
+data_quality:
+  # Missing data handling
+  missing_data:
+    # Maximum allowed missing data percentage
+    max_missing_pct: 20.0
+    
+    # Imputation method
+    imputation: linear_interpolation  # Options: none, mean, median, linear_interpolation
+  
+  # Outlier detection
+  outliers:
+    enabled: true
+    
+    # Detection method
+    method: iqr  # Options: iqr, zscore
+    
+    # IQR multiplier (for IQR method)
+    iqr_multiplier: 1.5
+    
+    # Z-score threshold (for zscore method)
+    zscore_threshold: 3.0
+
+
+# Report Generation
+reports:
+  # Summary reports
+  summary:
+    enabled: true
+    
+    # Report periods
+    periods:
+      - daily
+      - weekly
+      - monthly
+    
+    # Metrics to include
+    metrics:
+      - sensor_health
+      - data_quality
+      - trend_summary
+      - anomaly_count
+      - correlation_summary
+  
+  # Export formats
+  export_formats:
+    - json
+    - csv
+
+
+# Performance
+performance:
+  # Caching
+  cache_enabled: true
+  cache_ttl: 300  # seconds (5 minutes)
+  
+  # Computation limits
+  max_data_points: 10000  # Maximum points to analyze in one operation
+  
+  # Parallel processing
+  parallel_enabled: false
+  worker_threads: 2
+  
+  # Batch processing
+  batch_size: 1000
+
+
+# Visualization
+visualization:
+  # Chart data optimization
+  downsample_threshold: 500  # Downsample if more than N points
+  
+  # Default chart settings
+  defaults:
+    chart_type: line
+    smoothing: false
+    show_confidence_band: true
