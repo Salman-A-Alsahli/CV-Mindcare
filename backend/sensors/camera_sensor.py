@@ -79,34 +79,53 @@ class CameraSensor(BaseSensor):
         Returns:
             bool: True if camera can be accessed
         """
-        if self.backend == "picamera2":
-            try:
-                from picamera2 import Picamera2
-
-                # Try to instantiate to check availability
-                test_cam = Picamera2()
-                test_cam.close()
-                logger.info("Picamera2 hardware detected")
+        if self.backend == "auto":
+            # Try picamera2 first (native RPi camera), then OpenCV
+            if self._check_picamera2_available():
+                logger.info("Auto-detected: Picamera2 hardware available")
                 return True
-            except Exception as e:
-                logger.warning(f"Picamera2 not available: {e}")
+            elif self._check_opencv_available():
+                logger.info("Auto-detected: OpenCV camera available")
+                return True
+            else:
+                logger.warning("Auto-detection: No camera hardware detected")
                 return False
+        elif self.backend == "picamera2":
+            return self._check_picamera2_available()
         else:
             # OpenCV backend
-            try:
-                import cv2
+            return self._check_opencv_available()
 
-                test_cap = cv2.VideoCapture(self.camera_index)
-                available = test_cap.isOpened()
-                test_cap.release()
-                if available:
-                    logger.info(f"OpenCV camera {self.camera_index} detected")
-                else:
-                    logger.warning(f"OpenCV camera {self.camera_index} not available")
-                return available
-            except Exception as e:
-                logger.warning(f"OpenCV camera check failed: {e}")
-                return False
+    def _check_picamera2_available(self) -> bool:
+        """Check if picamera2 hardware is available."""
+        try:
+            from picamera2 import Picamera2
+
+            # Try to instantiate to check availability
+            test_cam = Picamera2()
+            test_cam.close()
+            logger.info("Picamera2 hardware detected")
+            return True
+        except Exception as e:
+            logger.debug(f"Picamera2 not available: {e}")
+            return False
+
+    def _check_opencv_available(self) -> bool:
+        """Check if OpenCV camera is available."""
+        try:
+            import cv2
+
+            test_cap = cv2.VideoCapture(self.camera_index)
+            available = test_cap.isOpened()
+            test_cap.release()
+            if available:
+                logger.info(f"OpenCV camera {self.camera_index} detected")
+            else:
+                logger.debug(f"OpenCV camera {self.camera_index} not available")
+            return available
+        except Exception as e:
+            logger.debug(f"OpenCV camera check failed: {e}")
+            return False
 
     def initialize(self) -> bool:
         """
@@ -118,7 +137,27 @@ class CameraSensor(BaseSensor):
         Raises:
             SensorUnavailableError: If hardware cannot be initialized
         """
-        if self.backend == "picamera2":
+        if self.backend == "auto":
+            # Try picamera2 first (native RPi camera), then fallback to OpenCV
+            logger.info("Auto-detecting camera backend...")
+            try:
+                if self._initialize_picamera2():
+                    self.backend = "picamera2"
+                    logger.info("Auto-selected backend: picamera2")
+                    return True
+            except Exception as e:
+                logger.debug(f"Picamera2 initialization failed, trying OpenCV: {e}")
+            
+            try:
+                if self._initialize_opencv():
+                    self.backend = "opencv"
+                    logger.info("Auto-selected backend: opencv")
+                    return True
+            except Exception as e:
+                logger.debug(f"OpenCV initialization failed: {e}")
+            
+            raise SensorUnavailableError("No camera backend available (tried picamera2 and opencv)")
+        elif self.backend == "picamera2":
             return self._initialize_picamera2()
         else:
             return self._initialize_opencv()
