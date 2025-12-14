@@ -63,7 +63,8 @@ microphone:
 
 # Air Quality Sensor Configuration (MQ-135)
 air_quality:
-  # Backend selection: 'serial', 'gpio', 'auto'
+  # Backend selection: 'serial', 'gpio', 'i2c', 'ads1115', 'auto'
+  # 'auto' will try i2c first, then serial, then spi
   backend: auto
   
   # Serial connection (for USB adapters)
@@ -72,7 +73,15 @@ air_quality:
     baudrate: 9600
     timeout: 1.0
   
-  # GPIO/ADC connection (for Raspberry Pi)
+  # I2C/ADS1115 connection (recommended for Raspberry Pi)
+  # ADS1115 is a 16-bit I2C ADC commonly used with MQ-135
+  i2c:
+    # ADC channel (0-3 for ADS1115)
+    channel: 0
+    # I2C address (0x48 is default for ADS1115)
+    address: 0x48
+  
+  # GPIO/ADC connection (MCP3008 via SPI)
   gpio:
     # ADC channel (0-7 for MCP3008)
     channel: 0
