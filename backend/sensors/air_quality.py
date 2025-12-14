@@ -167,7 +167,7 @@ class AirQualitySensor(BaseSensor):
                         logger.debug("I2C lock acquisition timeout")
                         i2c.deinit()
                         return False
-                    time.sleep(0.001)  # Yield CPU to prevent busy-wait
+                    time.sleep(0.01)  # 10ms sleep to reduce CPU usage
                 
                 try:
                     devices = i2c.scan()

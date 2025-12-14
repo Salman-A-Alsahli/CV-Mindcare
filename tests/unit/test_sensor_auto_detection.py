@@ -11,6 +11,10 @@ from backend.sensors.camera_sensor import CameraSensor
 from backend.sensors.air_quality import AirQualitySensor
 from backend.sensors.base import SensorStatus
 
+# Test constants for I2C addresses
+TEST_I2C_ADDRESS = 0x4b  # Example non-default I2C address
+DEFAULT_ADS1115_ADDRESS = 0x48  # Default ADS1115 I2C address
+
 
 class TestCameraAutoDetection:
     """Test camera sensor auto backend detection."""
@@ -93,10 +97,6 @@ class TestCameraAutoDetection:
 
 class TestAirQualityI2CDetection:
     """Test air quality sensor I2C device detection."""
-    
-    # Test constants
-    TEST_I2C_ADDRESS = 0x4b  # Example non-default I2C address
-    DEFAULT_ADS1115_ADDRESS = 0x48  # Default ADS1115 I2C address
 
     def test_i2c_scan_detects_configured_address(self):
         """Test that I2C scan detects device at configured address."""
@@ -104,13 +104,13 @@ class TestAirQualityI2CDetection:
         mock_board = MagicMock()
         mock_busio = MagicMock()
         mock_i2c = MagicMock()
-        mock_i2c.scan.return_value = [self.TEST_I2C_ADDRESS]
+        mock_i2c.scan.return_value = [TEST_I2C_ADDRESS]
         mock_busio.I2C.return_value = mock_i2c
         
         with patch.dict(sys.modules, {'board': mock_board, 'busio': mock_busio}):
             sensor = AirQualitySensor(config={
                 "backend": "i2c",
-                "i2c": {"address": self.TEST_I2C_ADDRESS}
+                "i2c": {"address": TEST_I2C_ADDRESS}
             })
             result = sensor.check_hardware_available()
         
@@ -124,13 +124,13 @@ class TestAirQualityI2CDetection:
         mock_busio = MagicMock()
         mock_i2c = MagicMock()
         # Device is at TEST_I2C_ADDRESS, but looking for default address
-        mock_i2c.scan.return_value = [self.TEST_I2C_ADDRESS]
+        mock_i2c.scan.return_value = [TEST_I2C_ADDRESS]
         mock_busio.I2C.return_value = mock_i2c
         
         with patch.dict(sys.modules, {'board': mock_board, 'busio': mock_busio}):
             sensor = AirQualitySensor(config={
                 "backend": "i2c",
-                "i2c": {"address": self.DEFAULT_ADS1115_ADDRESS}
+                "i2c": {"address": DEFAULT_ADS1115_ADDRESS}
             })
             result = sensor.check_hardware_available()
         
