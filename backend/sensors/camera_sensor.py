@@ -50,7 +50,7 @@ class CameraSensor(BaseSensor):
 
         # Configuration
         self.camera_index = self.config.get("camera_index", 0)
-        self.backend = self.config.get("backend", "opencv")
+        self.backend = self.config.get("backend", "auto")  # Default to auto-detection
         
         # Handle resolution - can be tuple (width, height) or dict with width/height
         resolution_config = self.config.get("resolution", (640, 480))
