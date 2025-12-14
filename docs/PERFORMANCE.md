@@ -300,7 +300,7 @@ After=network.target
 Type=simple
 User=YOUR_USERNAME
 WorkingDirectory=/home/YOUR_USERNAME/CV-Mindcare
-ExecStart=/home/YOUR_USERNAME/CV-Mindcare/.venv/bin/uvicorn backend.app:app --host 0.0.0.0
+ExecStart=/home/YOUR_USERNAME/CV-Mindcare/.venv/bin/uvicorn backend.app:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=10
 

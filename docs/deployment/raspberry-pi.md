@@ -1194,19 +1194,19 @@ crontab -e
 # Add these lines:
 
 # Daily database optimization (2 AM)
-0 2 * * * sqlite3 /home/YOUR_USERNAME/CV-Mindcare/mindcare.db "PRAGMA optimize;"
+0 2 * * * sqlite3 $HOME/CV-Mindcare/mindcare.db "PRAGMA optimize;"
 
 # Weekly log cleanup (Sunday 3 AM) - if you create log files
-0 3 * * 0 find /home/YOUR_USERNAME/CV-Mindcare/logs -name "*.log" -mtime +7 -delete 2>/dev/null
+0 3 * * 0 find $HOME/CV-Mindcare/logs -name "*.log" -mtime +7 -delete 2>/dev/null
 
 # Daily backup (4 AM)
-0 4 * * * mkdir -p /home/YOUR_USERNAME/backups && cp /home/YOUR_USERNAME/CV-Mindcare/mindcare.db /home/YOUR_USERNAME/backups/mindcare_$(date +\%Y\%m\%d).db
+0 4 * * * mkdir -p $HOME/backups && cp $HOME/CV-Mindcare/mindcare.db $HOME/backups/mindcare_$(date +\%Y\%m\%d).db
 
 # Weekly system update (Sunday 5 AM)
 0 5 * * 0 sudo apt update && sudo apt upgrade -y
 
 # Daily health check log (6 AM)
-0 6 * * * /home/YOUR_USERNAME/check_health.sh >> /home/YOUR_USERNAME/health_log.txt
+0 6 * * * $HOME/check_health.sh >> $HOME/health_log.txt
 ```
 
 ### Update CV-Mindcare
