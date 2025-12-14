@@ -72,6 +72,16 @@ curl -X POST http://localhost:8000/api/sensors/manager/start
 curl http://localhost:8000/api/live
 ```
 
+**Tip**: For better readability, pipe curl output through `jq`:
+```bash
+curl http://localhost:8000/api/sensors/manager/status | jq
+```
+
+Or add a newline to separate output from the prompt:
+```bash
+curl -w '\n' http://localhost:8000/api/sensors/manager/start
+```
+
 ## What's Next?
 
 - 📖 [Installation Guide](installation.md) - Detailed setup instructions
