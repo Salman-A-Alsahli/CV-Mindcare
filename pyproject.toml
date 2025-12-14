@@ -41,18 +41,20 @@ dependencies = [
     "requests>=2.31.0",
     "httpx>=0.25.0",
     "pyyaml>=6.0",
+    "opencv-python>=4.8.0",
+    "sounddevice>=0.4.6",
 ]
 
 [project.optional-dependencies]
-# ML/AI features - emotion detection, advanced analytics
+# ML/AI features - emotion detection, advanced analytics (OPTIONAL)
+# These are heavy dependencies (~2GB+) only needed for emotion detection
+# Core features (greenery, noise, air quality) work without these
 ml = [
     "torch>=2.0.0",
     "accelerate>=0.24.0",
     "safetensors>=0.4.0",
     "transformers>=4.35.0",
     "deepface>=0.0.79",
-    "sounddevice>=0.4.6",
-    "opencv-python>=4.8.0",
 ]
 
 # Development tools - testing, linting, formatting

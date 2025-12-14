@@ -16,8 +16,8 @@
 git clone https://github.com/Salman-A-Alsahli/CV-Mindcare.git
 cd CV-Mindcare
 
-# Install with all features
-pip install -e .[dev,ml]
+# Install (fast ~2 minutes)
+pip install -e .
 
 # Start web dashboard
 ./setup-frontend.sh && ./start-dashboard.sh
@@ -30,6 +30,9 @@ Alternative methods:
 # API only
 uvicorn backend.app:app --reload
 # Visit http://localhost:8000/docs
+
+# With optional ML features (emotion detection - slower install ~40 min)
+pip install -e .[ml]
 ```
 
 ---
@@ -104,10 +107,10 @@ uvicorn backend.app:app --reload
 ## 📦 Installation Options
 
 ```bash
-# Base installation
+# Base installation (fast ~2 min, recommended)
 pip install -e .
 
-# With ML features (emotion detection)
+# With ML features (emotion detection - slower ~40 min)
 pip install -e .[ml]
 
 # With development tools

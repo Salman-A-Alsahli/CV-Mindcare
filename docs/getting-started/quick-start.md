@@ -19,14 +19,31 @@ cd CV-Mindcare
 
 ### 2. Install Dependencies
 
-**Option A: Complete Installation (Recommended)**
-```bash
-pip install -e .[dev,ml]
-```
-
-**Option B: Base Installation Only**
+**Option A: Base Installation (Recommended for Quick Start - ~2 minutes)**
 ```bash
 pip install -e .
+```
+
+This installs all core features:
+- ✅ Camera greenery detection
+- ✅ Noise analysis  
+- ✅ Air quality monitoring
+- ✅ Web dashboard
+- ✅ Real-time analytics
+
+**Option B: With Optional ML Features (emotion detection - requires ~40 minutes)**
+```bash
+pip install -e .[ml]
+```
+
+**Option C: Development Tools**
+```bash
+pip install -e .[dev]
+```
+
+**Option D: Everything (ML + Development)**
+```bash
+pip install -e .[dev,ml]
 ```
 
 ### 3. Start the Application
