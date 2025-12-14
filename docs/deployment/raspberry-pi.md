@@ -96,7 +96,7 @@ Total: ~$160-230
    - **Set username and password:** 
      - Username: Your choice (e.g., `admin`, `yourname`) - **NOT "pi"!**
      - Password: Strong password
-     - **⚠️ Note:** Raspberry Pi 5 does NOT use "pi" as default username anymore!
+     - **⚠️ Note:** Newer Raspberry Pi OS (Bookworm+) requires you to set a custom username during setup. The old default "pi" username is no longer used!
    - **Configure WiFi:** (optional) Enter your WiFi credentials
    - **Set timezone:** Your local timezone
    - Click "Save"
@@ -457,11 +457,11 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=admin
-Group=admin
-WorkingDirectory=/home/admin/CV-Mindcare
-Environment="PATH=/home/admin/CV-Mindcare/.venv/bin"
-ExecStart=/home/admin/CV-Mindcare/.venv/bin/uvicorn backend.app:app --host 0.0.0.0 --port 8000 --workers 2
+User=YOUR_USERNAME
+Group=YOUR_USERNAME
+WorkingDirectory=/home/YOUR_USERNAME/CV-Mindcare
+Environment="PATH=/home/YOUR_USERNAME/CV-Mindcare/.venv/bin"
+ExecStart=/home/YOUR_USERNAME/CV-Mindcare/.venv/bin/uvicorn backend.app:app --host 0.0.0.0 --port 8000 --workers 2
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -1192,19 +1192,19 @@ crontab -e
 # Add these lines:
 
 # Daily database optimization (2 AM)
-0 2 * * * sqlite3 /home/admin/CV-Mindcare/mindcare.db "PRAGMA optimize;"
+0 2 * * * sqlite3 /home/YOUR_USERNAME/CV-Mindcare/mindcare.db "PRAGMA optimize;"
 
 # Weekly log cleanup (Sunday 3 AM) - if you create log files
-0 3 * * 0 find /home/admin/CV-Mindcare/logs -name "*.log" -mtime +7 -delete 2>/dev/null
+0 3 * * 0 find /home/YOUR_USERNAME/CV-Mindcare/logs -name "*.log" -mtime +7 -delete 2>/dev/null
 
 # Daily backup (4 AM)
-0 4 * * * mkdir -p /home/admin/backups && cp /home/admin/CV-Mindcare/mindcare.db /home/admin/backups/mindcare_$(date +\%Y\%m\%d).db
+0 4 * * * mkdir -p /home/YOUR_USERNAME/backups && cp /home/YOUR_USERNAME/CV-Mindcare/mindcare.db /home/YOUR_USERNAME/backups/mindcare_$(date +\%Y\%m\%d).db
 
 # Weekly system update (Sunday 5 AM)
 0 5 * * 0 sudo apt update && sudo apt upgrade -y
 
 # Daily health check log (6 AM)
-0 6 * * * /home/admin/check_health.sh >> /home/admin/health_log.txt
+0 6 * * * /home/YOUR_USERNAME/check_health.sh >> /home/YOUR_USERNAME/health_log.txt
 ```
 
 ### Update CV-Mindcare
@@ -1492,15 +1492,17 @@ If you encounter issues:
 ## 📝 Important Notes for Raspberry Pi 5
 
 ### Username Changes
-**⚠️ CRITICAL:** Raspberry Pi 5 (with newer Raspberry Pi OS) does NOT use "pi" as the default username!
+**⚠️ CRITICAL:** Newer Raspberry Pi OS (Bookworm and later) does NOT use "pi" as the default username!
 
-- You choose your username during initial OS setup
-- All paths in this guide use "admin" as an example
-- **You MUST replace "admin" with YOUR actual username** in:
-  - Systemd service file paths
+- **OS Change (not hardware-specific):** This applies to Raspberry Pi OS Bookworm+ on any Raspberry Pi model
+- You choose your username during initial OS setup with Raspberry Pi Imager
+- All paths in this guide use "YOUR_USERNAME" as a placeholder
+- **You MUST replace "YOUR_USERNAME" with YOUR actual username** in:
+  - Systemd service file paths (`User=`, `WorkingDirectory=`, `Environment=`)
   - Database paths
   - Cron job paths
   - Any scripts or commands
+  - SSH commands (e.g., `ssh admin@...` where `admin` is your chosen username)
 
 ### Power Requirements
 - Raspberry Pi 5 requires 27W USB-C power supply (5.1V/5A)
