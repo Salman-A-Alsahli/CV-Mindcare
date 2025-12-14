@@ -47,6 +47,7 @@ pip install -e .[ml]
 - 🔒 **Privacy-First** - All processing stays local, zero cloud
 - 🔌 **WebSocket Streaming** - Live sensor data updates
 - 📈 **Advanced Analytics** - Trends, anomalies, correlations
+- ⚡ **Simulation Engine** - Realistic scenario-based testing without hardware
 
 ---
 

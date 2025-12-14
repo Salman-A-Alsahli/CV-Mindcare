@@ -17,7 +17,7 @@ Features:
 import threading
 import time
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 from enum import Enum
 
@@ -26,6 +26,14 @@ from .microphone_sensor import MicrophoneSensor
 from .air_quality import AirQualitySensor
 
 logger = logging.getLogger(__name__)
+
+# Import simulation controller
+try:
+    from ..services.simulation_controller import SimulationController
+    SIMULATION_AVAILABLE = True
+except ImportError:
+    SIMULATION_AVAILABLE = False
+    logger.warning("SimulationController not available")
 
 
 class ManagerStatus(Enum):
@@ -104,6 +112,10 @@ class SensorManager:
             "air_quality": None,
         }
         self._error_counts: Dict[str, int] = {"camera": 0, "microphone": 0, "air_quality": 0}
+
+        # Simulation mode
+        self.simulation_controller = SimulationController() if SIMULATION_AVAILABLE else None
+        self.simulation_mode = False
 
         logger.info(f"SensorManager initialized (polling={self.polling_interval}s)")
 
@@ -199,6 +211,7 @@ class SensorManager:
                     "running": self.running,
                     "polling_interval": self.polling_interval,
                     "uptime": self._calculate_uptime(),
+                    "simulation_mode": self.simulation_mode,
                 },
                 "sensors": {
                     "camera": {
@@ -237,12 +250,27 @@ class SensorManager:
 
     def read_all(self) -> Dict[str, Any]:
         """
-        Read data from all active sensors.
+        Read data from all active sensors or simulation.
 
         Returns:
             dict: Data from all sensors that successfully read
         """
         with self._lock:
+            # If simulation mode is active, use simulated data
+            if self.simulation_mode and self.simulation_controller:
+                sensor_data = self.simulation_controller.generate_sensor_data()
+                return {
+                    "timestamp": sensor_data["timestamp"],
+                    "data": {
+                        "camera": sensor_data["camera"],
+                        "microphone": sensor_data["microphone"],
+                        "emotion": sensor_data["emotion"],
+                    },
+                    "errors": {},
+                    "simulation_mode": True,
+                    "scenario": sensor_data["scenario"],
+                }
+            
             result = {"timestamp": datetime.now().isoformat(), "data": {}, "errors": {}}
 
             # Read camera
@@ -493,3 +521,99 @@ class SensorManager:
         if self._start_time:
             return (datetime.now() - self._start_time).total_seconds()
         return None
+    
+    def start_simulation(self, scenario: str = "calm") -> bool:
+        """
+        Start simulation mode with specified scenario.
+        
+        Stops real sensors and switches to simulated data generation.
+        
+        Args:
+            scenario: Scenario name ("calm", "stress", "dynamic", "custom")
+            
+        Returns:
+            bool: True if simulation started successfully
+        """
+        if not SIMULATION_AVAILABLE or not self.simulation_controller:
+            logger.error("Simulation controller not available")
+            return False
+        
+        with self._lock:
+            # Stop real sensors if running
+            if self.running and not self.simulation_mode:
+                logger.info("Stopping real sensors for simulation mode")
+                self.stop_all()
+            
+            # Start simulation
+            if self.simulation_controller.start(scenario):
+                self.simulation_mode = True
+                
+                # Restart manager if not running (for polling)
+                if not self.running:
+                    self.status = ManagerStatus.STARTING
+                    self.running = True
+                    self._polling_thread = threading.Thread(
+                        target=self._polling_loop, daemon=True, name="SimulationPolling"
+                    )
+                    self._polling_thread.start()
+                    self.status = ManagerStatus.RUNNING
+                    self._start_time = datetime.now()
+                
+                logger.info(f"Simulation mode started with scenario: {scenario}")
+                return True
+            else:
+                logger.error("Failed to start simulation controller")
+                return False
+    
+    def stop_simulation(self) -> bool:
+        """
+        Stop simulation mode and optionally restart real sensors.
+        
+        Returns:
+            bool: True if simulation stopped successfully
+        """
+        if not SIMULATION_AVAILABLE or not self.simulation_controller:
+            logger.warning("Simulation controller not available")
+            return False
+        
+        with self._lock:
+            if not self.simulation_mode:
+                logger.warning("Simulation mode is not active")
+                return True
+            
+            # Stop simulation
+            self.simulation_controller.stop()
+            self.simulation_mode = False
+            
+            logger.info("Simulation mode stopped")
+            return True
+    
+    def get_simulation_status(self) -> Dict[str, Any]:
+        """
+        Get current simulation status.
+        
+        Returns:
+            Dict with simulation status information
+        """
+        if not SIMULATION_AVAILABLE or not self.simulation_controller:
+            return {
+                "available": False,
+                "active": False,
+                "error": "Simulation controller not available",
+            }
+        
+        status = self.simulation_controller.get_status()
+        status["available"] = True
+        return status
+    
+    def get_simulation_scenarios(self) -> List[Dict[str, Any]]:
+        """
+        Get list of available simulation scenarios.
+        
+        Returns:
+            List of scenario information
+        """
+        if not SIMULATION_AVAILABLE or not self.simulation_controller:
+            return []
+        
+        return self.simulation_controller.get_available_scenarios()

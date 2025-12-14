@@ -1142,5 +1142,131 @@ async def get_baselines() -> Dict[str, object]:
         )
 
 
+# ============================================================================
+# Simulation Engine Endpoints
+# ============================================================================
+
+class SimulationStartRequest(BaseModel):
+    """Request model for starting simulation."""
+    scenario: str = "calm"
+
+
+@app.get("/api/simulation/status")
+async def get_simulation_status() -> Dict[str, object]:
+    """
+    Get current simulation status.
+    
+    Returns:
+        Simulation status information including active scenario
+    """
+    try:
+        manager = get_sensor_manager()
+        return manager.get_simulation_status()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get simulation status: {str(e)}",
+        )
+
+
+@app.get("/api/simulation/scenarios")
+async def get_simulation_scenarios() -> Dict[str, object]:
+    """
+    Get list of available simulation scenarios.
+    
+    Returns:
+        List of scenarios with descriptions and parameters
+    """
+    try:
+        manager = get_sensor_manager()
+        scenarios = manager.get_simulation_scenarios()
+        return {
+            "scenarios": scenarios,
+            "count": len(scenarios),
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get simulation scenarios: {str(e)}",
+        )
+
+
+@app.post("/api/simulation/start", status_code=status.HTTP_200_OK)
+async def start_simulation(request: SimulationStartRequest) -> Dict[str, object]:
+    """
+    Start simulation mode with specified scenario.
+    
+    Stops real sensors and switches to simulated data generation.
+    
+    Args:
+        request: Contains scenario name ("calm", "stress", "dynamic", "custom")
+        
+    Returns:
+        Success message and simulation status
+    """
+    try:
+        manager = get_sensor_manager()
+        
+        # Validate scenario
+        valid_scenarios = ["calm", "stress", "dynamic", "custom"]
+        if request.scenario.lower() not in valid_scenarios:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid scenario. Must be one of: {', '.join(valid_scenarios)}",
+            )
+        
+        # Start simulation
+        success = manager.start_simulation(request.scenario)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to start simulation",
+            )
+        
+        return {
+            "message": f"Simulation started with scenario: {request.scenario}",
+            "status": manager.get_simulation_status(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Simulation start failed: {str(e)}",
+        )
+
+
+@app.post("/api/simulation/stop", status_code=status.HTTP_200_OK)
+async def stop_simulation() -> Dict[str, object]:
+    """
+    Stop simulation mode and revert to live sensor data.
+    
+    Returns:
+        Success message
+    """
+    try:
+        manager = get_sensor_manager()
+        success = manager.stop_simulation()
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to stop simulation",
+            )
+        
+        return {
+            "message": "Simulation stopped successfully",
+            "status": manager.get_simulation_status(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Simulation stop failed: {str(e)}",
+        )
+
+
 if __name__ == "__main__":
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

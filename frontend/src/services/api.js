@@ -88,4 +88,25 @@ export const submitFeedback = async (feedbackData) => {
   return response.data;
 };
 
+// Simulation APIs
+export const getSimulationStatus = async () => {
+  const response = await api.get('/api/simulation/status');
+  return response.data;
+};
+
+export const getSimulationScenarios = async () => {
+  const response = await api.get('/api/simulation/scenarios');
+  return response.data;
+};
+
+export const startSimulation = async (scenario = 'calm') => {
+  const response = await api.post('/api/simulation/start', { scenario });
+  return response.data;
+};
+
+export const stopSimulation = async () => {
+  const response = await api.post('/api/simulation/stop');
+  return response.data;
+};
+
 export default api;
