@@ -20,6 +20,7 @@ http://127.0.0.1:8000
   - [Statistics](#statistics)
   - [Live Data](#live-data)
   - [Control](#control)
+  - [Sensor Manager](#sensor-manager)
 - [Data Models](#data-models)
 - [Error Handling](#error-handling)
 - [Examples](#examples)
@@ -328,6 +329,239 @@ Request to stop data collection.
 
 ---
 
+### Sensor Manager
+
+The Sensor Manager provides centralized control and monitoring for all sensors (camera, microphone, air quality). It handles automatic polling, health monitoring, and graceful error recovery.
+
+#### GET `/api/sensors/manager/status`
+
+Get the current status of the sensor manager and all managed sensors.
+
+**Response:**
+```json
+{
+  "manager": {
+    "status": "running",
+    "running": true,
+    "polling_interval": 5.0,
+    "uptime": 123.45
+  },
+  "sensors": {
+    "camera": {
+      "name": "Camera Sensor",
+      "type": "camera",
+      "status": "active",
+      "active": true,
+      "mock_mode": false,
+      "error_message": null,
+      "config": {},
+      "uptime_seconds": 120.5,
+      "error_count": 0,
+      "retry_count": 0,
+      "last_read": "2025-12-14T11:30:00.000000"
+    },
+    "microphone": {
+      "name": "Microphone Sensor",
+      "type": "microphone",
+      "status": "active",
+      "active": true,
+      "mock_mode": false,
+      "error_message": null,
+      "config": {},
+      "uptime_seconds": 120.5,
+      "error_count": 0,
+      "retry_count": 0,
+      "last_read": "2025-12-14T11:30:00.000000"
+    },
+    "air_quality": {
+      "name": "MQ-135 Air Quality Sensor",
+      "type": "air_quality",
+      "status": "active",
+      "active": true,
+      "mock_mode": false,
+      "error_message": null,
+      "config": {},
+      "uptime_seconds": 120.5,
+      "error_count": 0,
+      "retry_count": 0,
+      "last_read": "2025-12-14T11:30:00.000000"
+    }
+  },
+  "timestamp": "2025-12-14T11:30:00.000000"
+}
+```
+
+**Fields:**
+- `manager.status` (string): Manager state (stopped/starting/running/stopping/error)
+- `manager.running` (boolean): Whether manager is actively running
+- `manager.polling_interval` (float): Seconds between sensor reads
+- `manager.uptime` (float|null): Manager uptime in seconds
+- `sensors.{name}.status` (string): Sensor status (active/mock_mode/error/unavailable)
+- `sensors.{name}.mock_mode` (boolean): Whether sensor is using mock data
+- `sensors.{name}.error_count` (int): Number of consecutive errors
+- `sensors.{name}.retry_count` (int): Number of restart attempts
+- `sensors.{name}.last_read` (string|null): Timestamp of last successful read
+
+**Status Codes:**
+- `200 OK`: Success
+- `500 Internal Server Error`: Failed to get status
+
+---
+
+#### POST `/api/sensors/manager/start`
+
+Start the sensor manager and all sensors. Begins automatic polling at the configured interval.
+
+**Request Body:** None
+
+**Response:**
+```json
+{
+  "message": "Sensor manager started",
+  "status": {
+    "manager": {
+      "status": "running",
+      "running": true,
+      "polling_interval": 5.0,
+      "uptime": 0.001
+    },
+    "sensors": {
+      "camera": { "status": "active", ... },
+      "microphone": { "status": "active", ... },
+      "air_quality": { "status": "active", ... }
+    },
+    "timestamp": "2025-12-14T11:30:00.000000"
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK`: Manager started successfully (at least one sensor started)
+- `500 Internal Server Error`: Failed to start any sensors
+
+**Note**: Sensors automatically fall back to mock mode if hardware is unavailable. The manager will still start successfully in this case.
+
+---
+
+#### POST `/api/sensors/manager/stop`
+
+Stop the sensor manager and all sensors. Stops automatic polling gracefully.
+
+**Request Body:** None
+
+**Response:**
+```json
+{
+  "message": "Sensor manager stopped",
+  "success": true,
+  "status": {
+    "manager": {
+      "status": "stopped",
+      "running": false,
+      "polling_interval": 5.0,
+      "uptime": null
+    },
+    "sensors": {
+      "camera": { "status": "inactive", ... },
+      "microphone": { "status": "inactive", ... },
+      "air_quality": { "status": "inactive", ... }
+    },
+    "timestamp": "2025-12-14T11:35:00.000000"
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK`: Manager stopped successfully
+- `500 Internal Server Error`: Failed to stop manager
+
+---
+
+#### GET `/api/sensors/manager/health`
+
+Get detailed health metrics for the sensor manager and all sensors.
+
+**Response:**
+```json
+{
+  "health_score": 100,
+  "status": "healthy",
+  "issues": [],
+  "timestamp": "2025-12-14T11:30:00.000000",
+  "manager": {
+    "status": "running",
+    "running": true,
+    "polling_interval": 5.0,
+    "uptime": 300.5
+  },
+  "sensors": {
+    "camera": { "status": "active", "error_count": 0, ... },
+    "microphone": { "status": "active", "error_count": 0, ... },
+    "air_quality": { "status": "active", "error_count": 0, ... }
+  }
+}
+```
+
+**Fields:**
+- `health_score` (int): Overall health score (0-100)
+  - 100: All sensors active, no errors
+  - 80-99: Degraded (some sensors in mock mode or minor errors)
+  - 50-79: Degraded (multiple sensors with issues)
+  - 0-49: Unhealthy (manager not running or major sensor failures)
+- `status` (string): Health status (healthy/degraded/unhealthy)
+- `issues` (array): List of detected problems
+- `timestamp` (string): ISO format timestamp
+
+**Status Codes:**
+- `200 OK`: Success
+- `500 Internal Server Error`: Failed to get health metrics
+
+---
+
+#### PUT `/api/sensors/manager/config`
+
+Update sensor manager configuration. Changes take effect on next restart.
+
+**Request Body:**
+```json
+{
+  "polling_interval": 3.0,
+  "auto_recover": true,
+  "max_retries": 5
+}
+```
+
+**Request Fields (all optional):**
+- `polling_interval` (float): Seconds between sensor reads (1.0-60.0 recommended)
+- `auto_recover` (boolean): Automatically restart failed sensors
+- `max_retries` (int): Maximum restart attempts per sensor
+
+**Response:**
+```json
+{
+  "message": "Configuration updated",
+  "config": {
+    "polling_interval": 3.0,
+    "auto_recover": true,
+    "max_retries": 5
+  },
+  "status": {
+    "manager": { "status": "running", ... },
+    "sensors": { ... }
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK`: Configuration updated successfully
+- `400 Bad Request`: Invalid configuration values
+- `422 Unprocessable Entity`: Invalid request body
+- `500 Internal Server Error`: Failed to update configuration
+
+**Note**: Configuration changes require manager restart to take full effect. Current polling will continue at old interval until restart.
+
+---
+
 ## Data Models
 
 ### SensorData
@@ -355,6 +589,16 @@ Request to stop data collection.
 {
   "avg_db": float,         # Decibel level
   "timestamp": str | None  # Optional ISO timestamp
+}
+```
+
+### ManagerConfig
+
+```python
+{
+  "polling_interval": float | None,  # Seconds between reads (1.0-60.0)
+  "auto_recover": bool | None,       # Auto-restart failed sensors
+  "max_retries": int | None          # Max restart attempts
 }
 ```
 
@@ -415,6 +659,29 @@ response = requests.get(f"{BASE_URL}/api/live")
 live_data = response.json()
 print(f"Emotion: {live_data['dominant_emotion']}")
 print(f"Sound: {live_data['avg_db']} dB")
+
+# Sensor Manager - Start all sensors
+response = requests.post(f"{BASE_URL}/api/sensors/manager/start")
+result = response.json()
+print(f"Manager status: {result['status']['manager']['status']}")
+
+# Sensor Manager - Get health metrics
+response = requests.get(f"{BASE_URL}/api/sensors/manager/health")
+health = response.json()
+print(f"Health score: {health['health_score']}/100 ({health['status']})")
+
+# Sensor Manager - Update configuration
+config = {
+    "polling_interval": 3.0,
+    "auto_recover": True,
+    "max_retries": 5
+}
+response = requests.put(f"{BASE_URL}/api/sensors/manager/config", json=config)
+print(response.json())
+
+# Sensor Manager - Stop all sensors
+response = requests.post(f"{BASE_URL}/api/sensors/manager/stop")
+print(response.json())
 ```
 
 ### JavaScript Fetch
@@ -441,9 +708,73 @@ async function recordFaces(count) {
   return await response.json();
 }
 
+// Sensor Manager - Start sensors
+async function startSensors() {
+  const response = await fetch(`${BASE_URL}/api/sensors/manager/start`, {
+    method: 'POST'
+  });
+  const result = await response.json();
+  console.log('Manager started:', result.status.manager.status);
+  return result;
+}
+
+// Sensor Manager - Get status
+async function getSensorStatus() {
+  const response = await fetch(`${BASE_URL}/api/sensors/manager/status`);
+  const status = await response.json();
+  console.log('Manager running:', status.manager.running);
+  console.log('Sensors:', Object.keys(status.sensors));
+  return status;
+}
+
+// Sensor Manager - Get health
+async function getHealth() {
+  const response = await fetch(`${BASE_URL}/api/sensors/manager/health`);
+  const health = await response.json();
+  console.log(`Health: ${health.health_score}/100 (${health.status})`);
+  if (health.issues.length > 0) {
+    console.log('Issues:', health.issues);
+  }
+  return health;
+}
+
+// Sensor Manager - Update config
+async function updateConfig(config) {
+  const response = await fetch(`${BASE_URL}/api/sensors/manager/config`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config)
+  });
+  return await response.json();
+}
+
+// Sensor Manager - Stop sensors
+async function stopSensors() {
+  const response = await fetch(`${BASE_URL}/api/sensors/manager/stop`, {
+    method: 'POST'
+  });
+  return await response.json();
+}
+
 // Usage
 getLiveData();
 recordFaces(2);
+
+// Sensor Manager workflow
+async function manageSensors() {
+  await startSensors();
+  await getSensorStatus();
+  const health = await getHealth();
+  
+  if (health.health_score < 80) {
+    await updateConfig({ auto_recover: true, max_retries: 5 });
+  }
+  
+  // Later...
+  await stopSensors();
+}
+
+manageSensors();
 ```
 
 ### cURL
@@ -465,6 +796,29 @@ curl http://127.0.0.1:8000/api/live
 
 # Stop collection
 curl -X POST http://127.0.0.1:8000/api/control/stop
+
+# Sensor Manager - Get status
+curl http://127.0.0.1:8000/api/sensors/manager/status
+
+# Sensor Manager - Start sensors
+curl -X POST http://127.0.0.1:8000/api/sensors/manager/start
+
+# Sensor Manager - Stop sensors
+curl -X POST http://127.0.0.1:8000/api/sensors/manager/stop
+
+# Sensor Manager - Get health metrics
+curl http://127.0.0.1:8000/api/sensors/manager/health
+
+# Sensor Manager - Update configuration
+curl -X PUT http://127.0.0.1:8000/api/sensors/manager/config \
+  -H "Content-Type: application/json" \
+  -d '{"polling_interval": 3.0, "auto_recover": true}'
+
+# Pretty print with jq (recommended for readability)
+curl http://127.0.0.1:8000/api/sensors/manager/status | jq
+
+# Add newline for better terminal output
+curl -w '\n' http://127.0.0.1:8000/api/sensors/manager/status
 ```
 
 ## Rate Limiting
