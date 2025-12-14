@@ -166,17 +166,14 @@ class AirQualitySensor(BaseSensor):
                     devices = i2c.scan()
                     if i2c_address in devices:
                         logger.info(f"I2C device detected at address 0x{i2c_address:02x}")
-                        i2c.unlock()
-                        i2c.deinit()
                         return True
                     else:
                         logger.debug(f"No I2C device found at 0x{i2c_address:02x}. Detected devices: {[hex(d) for d in devices]}")
-                        i2c.unlock()
-                        i2c.deinit()
-                        # Don't return False yet - might be detected with different method
                 finally:
-                    if i2c.locked():
+                    try:
                         i2c.unlock()
+                    except:
+                        pass  # Lock might already be released
                     i2c.deinit()
             except (ImportError, RuntimeError, ValueError) as e:
                 logger.debug(f"I2C/ADS1115 check failed: {e}")

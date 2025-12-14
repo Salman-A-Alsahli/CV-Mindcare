@@ -101,7 +101,6 @@ class TestAirQualityI2CDetection:
         mock_busio = MagicMock()
         mock_i2c = MagicMock()
         mock_i2c.scan.return_value = [0x4b]
-        mock_i2c.locked.return_value = False
         mock_busio.I2C.return_value = mock_i2c
         
         with patch.dict(sys.modules, {'board': mock_board, 'busio': mock_busio}):
@@ -121,7 +120,6 @@ class TestAirQualityI2CDetection:
         mock_busio = MagicMock()
         mock_i2c = MagicMock()
         mock_i2c.scan.return_value = [0x4b]
-        mock_i2c.locked.return_value = False
         mock_busio.I2C.return_value = mock_i2c
         
         with patch.dict(sys.modules, {'board': mock_board, 'busio': mock_busio}):
@@ -141,7 +139,6 @@ class TestAirQualityI2CDetection:
         mock_busio = MagicMock()
         mock_i2c = MagicMock()
         mock_i2c.scan.return_value = []
-        mock_i2c.locked.return_value = False
         mock_busio.I2C.return_value = mock_i2c
         
         with patch.dict(sys.modules, {'board': mock_board, 'busio': mock_busio}):
