@@ -46,9 +46,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# ML/AI features - emotion detection, advanced analytics (OPTIONAL)
-# These are heavy dependencies (~2GB+) only needed for emotion detection feature
-# Core features work with base install: greenery (opencv), noise (sounddevice), air quality
+# ML/AI features - emotion detection with deep learning models (OPTIONAL)
+# Heavy dependencies (~2GB+): PyTorch, Transformers, DeepFace
+# Only needed for optional emotion detection feature
+# All core features (greenery, noise, air quality) work without these
 ml = [
     "torch>=2.0.0",
     "accelerate>=0.24.0",

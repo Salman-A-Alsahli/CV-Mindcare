@@ -26,7 +26,7 @@ pip install -e .
 
 This installs all core features:
 - ✅ Camera greenery detection
-- ✅ Noise analysis  
+- ✅ Noise analysis
 - ✅ Air quality monitoring
 - ✅ Web dashboard
 - ✅ Real-time analytics
