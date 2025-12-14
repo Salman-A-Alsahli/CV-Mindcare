@@ -301,17 +301,14 @@ class AirQualitySensor(BaseSensor):
             # Create ADS1115 object with specified address
             self._adc = ADS.ADS1115(i2c, address=i2c_address)
 
+            # Map channel number to ADS1115 pin constant
+            channel_map = {0: ADS.P0, 1: ADS.P1, 2: ADS.P2, 3: ADS.P3}
+            
+            if self._adc_channel not in channel_map:
+                raise ValueError(f"Invalid I2C channel: {self._adc_channel}. Must be 0-3.")
+            
             # Create analog input on specified channel
-            if self._adc_channel == 0:
-                self._analog_input = AnalogIn(self._adc, ADS.P0)
-            elif self._adc_channel == 1:
-                self._analog_input = AnalogIn(self._adc, ADS.P1)
-            elif self._adc_channel == 2:
-                self._analog_input = AnalogIn(self._adc, ADS.P2)
-            elif self._adc_channel == 3:
-                self._analog_input = AnalogIn(self._adc, ADS.P3)
-            else:
-                raise ValueError(f"Invalid I2C channel: {self._adc_channel}")
+            self._analog_input = AnalogIn(self._adc, channel_map[self._adc_channel])
 
             # Test read to verify connection
             test_value = self._analog_input.value
@@ -461,9 +458,11 @@ class AirQualitySensor(BaseSensor):
 
         try:
             # Read from ADS1115
-            # ADS1115 returns signed 16-bit value (-32768 to +32767)
-            # For single-ended reads with MQ-135, we expect positive values
-            # Normalize to 0-1023 range for compatibility with other backends
+            # The Adafruit AnalogIn.value property returns a SIGNED 16-bit integer
+            # Range: -32768 to +32767 (differential mode)
+            # For single-ended reads (MQ-135): typically 0 to +32767 (positive only)
+            # Negative values can occur in differential mode or with electrical noise
+            # We normalize to 0-1023 range for compatibility with 10-bit ADCs
             adc_value = self._analog_input.value
             
             # Clamp negative values to 0 (shouldn't happen with single-ended reads)
@@ -474,6 +473,7 @@ class AirQualitySensor(BaseSensor):
             # Normalize signed 16-bit value to 10-bit range (0-1023)
             # ADS1115 signed range: -32768 to +32767
             # For positive values (sensor readings): 0 to 32767
+            # Normalization formula: (value / 32767) * 1023
             normalized_value = (adc_value / 32767.0) * 1023.0
             
             return float(normalized_value)
