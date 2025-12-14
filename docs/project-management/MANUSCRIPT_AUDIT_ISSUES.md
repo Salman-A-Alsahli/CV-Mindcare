@@ -189,8 +189,8 @@ Wants=cv-mindcare-backend.service
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/CV-Mindcare
+User=YOUR_USERNAME
+WorkingDirectory=/home/YOUR_USERNAME/CV-Mindcare
 Environment="DISPLAY=:0"
 Environment="KIVY_BCM_DISPMANX_ID=0"
 ExecStart=/usr/bin/python3 frontend/touchscreen/main_app.py

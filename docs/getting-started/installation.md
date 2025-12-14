@@ -32,15 +32,20 @@ Complete installation instructions for CV-Mindcare on all platforms.
 git clone https://github.com/Salman-A-Alsahli/CV-Mindcare.git
 cd CV-Mindcare
 
-# Install with all features
-pip install -e .[dev,ml]
+# RECOMMENDED: Base installation (fast ~2 minutes)
+# Includes all core features: camera, microphone, air quality, dashboard
+pip install -e .
+
+# OPTIONAL: Add ML features (emotion detection - requires ~40 minutes)
+pip install -e .[ml]
 
 # Or install specific feature sets:
-pip install -e .              # Base only
-pip install -e .[ml]          # With ML features
-pip install -e .[dev]         # With development tools
+pip install -e .[dev]         # Development tools
 pip install -e .[rpi]         # Raspberry Pi optimized
+pip install -e .[dev,ml]      # Development + ML (complete, ~40+ min)
 ```
+
+**💡 Tip**: Start with the base installation to get running quickly. You can always add ML features later with `pip install -e .[ml]`
 
 ### Method 2: Legacy requirements.txt (Deprecated)
 
@@ -84,7 +89,12 @@ git clone https://github.com/Salman-A-Alsahli/CV-Mindcare.git
 cd CV-Mindcare
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e .[dev,ml]
+
+# Fast installation (~2 minutes)
+pip install -e .
+
+# Optional: Add ML features later if needed (~40 minutes)
+# pip install -e .[ml]
 ```
 
 ### macOS
@@ -104,7 +114,12 @@ git clone https://github.com/Salman-A-Alsahli/CV-Mindcare.git
 cd CV-Mindcare
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e .[dev,ml]
+
+# Fast installation (~2 minutes)
+pip install -e .
+
+# Optional: Add ML features later if needed (~40 minutes)
+# pip install -e .[ml]
 ```
 
 ### Windows
@@ -123,8 +138,11 @@ python -m venv .venv
 # Activate virtual environment
 .\.venv\Scripts\Activate.ps1
 
-# Install
-pip install -e .[dev,ml]
+# Fast installation (~2 minutes)
+pip install -e .
+
+# Optional: Add ML features later if needed (~40 minutes)
+# pip install -e .[ml]
 ```
 
 ### Raspberry Pi
