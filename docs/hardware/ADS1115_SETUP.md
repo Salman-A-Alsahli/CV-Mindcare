@@ -237,6 +237,57 @@ air_quality:
 3. Try different I2C address (some modules use 0x49, 0x4A, 0x4B)
 4. Check power supply to ADS1115 (should be 3.3V)
 
+#### Detecting Your Actual I2C Address
+
+If your I2C device appears at a different address (e.g., 0x4b instead of 0x48), follow these steps:
+
+1. **Scan for I2C devices:**
+   ```bash
+   sudo i2cdetect -y 1
+   ```
+
+2. **Identify your device address** in the output. For example:
+   ```
+        0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+   00:          -- -- -- -- -- -- -- -- -- -- -- -- -- 
+   10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+   20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+   30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+   40: -- -- -- -- -- -- -- -- -- -- -- 4b -- -- -- -- 
+   50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+   60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+   70: -- -- -- -- -- -- -- --
+   ```
+   In this example, the device is at address **0x4b** (hex).
+
+3. **Update your configuration** in `config/sensors.yaml`:
+   ```yaml
+   air_quality:
+     backend: i2c
+     
+     i2c:
+       channel: 0
+       address: 0x4b  # Changed from default 0x48 to match detected address
+   ```
+
+4. **Verify the change:**
+   ```bash
+   # Restart the application
+   python -m backend.app
+   
+   # Check logs for I2C initialization messages
+   # Should see: "I2C device detected at address 0x4b"
+   ```
+
+**Common I2C Addresses:**
+- `0x48` - ADS1115 default address (ADDR pin to GND)
+- `0x49` - ADS1115 with ADDR pin to VDD
+- `0x4a` - ADS1115 with ADDR pin to SDA
+- `0x4b` - ADS1115 with ADDR pin to SCL
+- Other addresses may indicate a different I2C device
+
+**Note:** The sensor will automatically detect if the configured I2C address has a device present. If the address doesn't match, the sensor will fall back to mock mode and log helpful diagnostic information.
+
 ### Import Errors
 
 **Problem:** `ModuleNotFoundError: No module named 'board'`

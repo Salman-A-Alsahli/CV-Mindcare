@@ -47,13 +47,22 @@ camera:
 sudo raspi-config
 # Navigate to: Interface Options > Camera > Enable
 
-# Install picamera2
+# Install picamera2 (for native Raspberry Pi camera support)
 pip install picamera2
 
 # Configure in config/sensors.yaml
 camera:
-  backend: picamera
+  backend: auto  # Recommended: auto-detects picamera2 or opencv
+  device_index: 0
 ```
+
+**Backend Auto-Detection**: 
+When `backend: auto` is configured, the camera sensor will:
+1. First try to use `picamera2` (native Raspberry Pi camera - 10x faster)
+2. Fall back to `opencv` (USB cameras, webcams) if picamera2 unavailable
+3. Enter mock mode if no camera hardware is detected
+
+This allows the same configuration to work on both Raspberry Pi (with native camera) and other systems (with USB cameras).
 
 ### Troubleshooting
 - **Camera not detected**: Check USB connection or drivers
@@ -61,6 +70,11 @@ camera:
   ```bash
   sudo usermod -a -G video $USER
   ```
+- **Raspberry Pi camera not working**: 
+  - Ensure camera cable is properly connected to CSI port
+  - Enable camera interface with `sudo raspi-config`
+  - Check camera detection: `libcamera-hello` (for newer Raspberry Pi OS)
+  - Verify picamera2 is installed: `pip show picamera2`
 
 ## Microphone Sensor
 
