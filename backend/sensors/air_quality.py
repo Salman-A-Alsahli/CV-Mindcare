@@ -172,8 +172,8 @@ class AirQualitySensor(BaseSensor):
                 finally:
                     try:
                         i2c.unlock()
-                    except:
-                        pass  # Lock might already be released
+                    except (RuntimeError, ValueError):
+                        pass  # Lock might already be released or in invalid state
                     i2c.deinit()
             except (ImportError, RuntimeError, ValueError) as e:
                 logger.debug(f"I2C/ADS1115 check failed: {e}")
