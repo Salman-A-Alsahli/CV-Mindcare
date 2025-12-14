@@ -426,9 +426,24 @@ Start the sensor manager and all sensors. Begins automatic polling at the config
       "uptime": 0.001
     },
     "sensors": {
-      "camera": { "status": "active", ... },
-      "microphone": { "status": "active", ... },
-      "air_quality": { "status": "active", ... }
+      "camera": {
+        "name": "Camera Sensor",
+        "status": "active",
+        "mock_mode": false,
+        "error_count": 0
+      },
+      "microphone": {
+        "name": "Microphone Sensor",
+        "status": "active",
+        "mock_mode": false,
+        "error_count": 0
+      },
+      "air_quality": {
+        "name": "MQ-135 Air Quality Sensor",
+        "status": "active",
+        "mock_mode": false,
+        "error_count": 0
+      }
     },
     "timestamp": "2025-12-14T11:30:00.000000"
   }
@@ -462,9 +477,21 @@ Stop the sensor manager and all sensors. Stops automatic polling gracefully.
       "uptime": null
     },
     "sensors": {
-      "camera": { "status": "inactive", ... },
-      "microphone": { "status": "inactive", ... },
-      "air_quality": { "status": "inactive", ... }
+      "camera": {
+        "name": "Camera Sensor",
+        "status": "inactive",
+        "active": false
+      },
+      "microphone": {
+        "name": "Microphone Sensor",
+        "status": "inactive",
+        "active": false
+      },
+      "air_quality": {
+        "name": "MQ-135 Air Quality Sensor",
+        "status": "inactive",
+        "active": false
+      }
     },
     "timestamp": "2025-12-14T11:35:00.000000"
   }
@@ -495,9 +522,24 @@ Get detailed health metrics for the sensor manager and all sensors.
     "uptime": 300.5
   },
   "sensors": {
-    "camera": { "status": "active", "error_count": 0, ... },
-    "microphone": { "status": "active", "error_count": 0, ... },
-    "air_quality": { "status": "active", "error_count": 0, ... }
+    "camera": {
+      "name": "Camera Sensor",
+      "status": "active",
+      "error_count": 0,
+      "retry_count": 0
+    },
+    "microphone": {
+      "name": "Microphone Sensor",
+      "status": "active",
+      "error_count": 0,
+      "retry_count": 0
+    },
+    "air_quality": {
+      "name": "MQ-135 Air Quality Sensor",
+      "status": "active",
+      "error_count": 0,
+      "retry_count": 0
+    }
   }
 }
 ```
@@ -546,8 +588,15 @@ Update sensor manager configuration. Changes take effect on next restart.
     "max_retries": 5
   },
   "status": {
-    "manager": { "status": "running", ... },
-    "sensors": { ... }
+    "manager": {
+      "status": "running",
+      "polling_interval": 3.0
+    },
+    "sensors": {
+      "camera": { "status": "active" },
+      "microphone": { "status": "active" },
+      "air_quality": { "status": "active" }
+    }
   }
 }
 ```
