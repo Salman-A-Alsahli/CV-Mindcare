@@ -450,8 +450,11 @@ class AirQualitySensor(BaseSensor):
         """
         Read raw value from I2C ADC (ADS1115).
 
+        Reads from ADS1115 16-bit ADC and normalizes to 0-1023 range
+        for compatibility with 10-bit ADCs (MCP3008, etc).
+
         Returns:
-            float: Raw sensor value (0-1023 normalized from 16-bit ADC)
+            float: Normalized sensor value (0-1023 range, scaled from 16-bit ADC)
         """
         if not self._analog_input:
             raise SensorError("I2C ADC (ADS1115) not initialized")
@@ -468,8 +471,9 @@ class AirQualitySensor(BaseSensor):
                 logger.warning(f"ADS1115 returned negative value: {adc_value}, clamping to 0")
                 adc_value = 0
             
-            # Normalize 16-bit value (0-32767) to 10-bit range (0-1023)
-            # Using 32767 as max instead of 65535 since we clamp negatives
+            # Normalize signed 16-bit value to 10-bit range (0-1023)
+            # ADS1115 signed range: -32768 to +32767
+            # For positive values (sensor readings): 0 to 32767
             normalized_value = (adc_value / 32767.0) * 1023.0
             
             return float(normalized_value)
@@ -599,7 +603,7 @@ class AirQualitySensor(BaseSensor):
 
             if self._adc:
                 # Close ADC if it has a close method
-                if hasattr(self._adc, 'close') and callable(self._adc.close):
+                if hasattr(self._adc, 'close'):
                     self._adc.close()
                 self._adc = None
                 logger.info("ADC connection closed")
