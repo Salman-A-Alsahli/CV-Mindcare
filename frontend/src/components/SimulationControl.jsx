@@ -68,10 +68,26 @@ function SimulationControl() {
 
   // Scenario icons and colors
   const scenarioConfig = {
-    calm: { icon: '🌿', color: 'green', bgColor: 'bg-green-50 dark:bg-green-900/20' },
-    stress: { icon: '⚠️', color: 'red', bgColor: 'bg-red-50 dark:bg-red-900/20' },
-    dynamic: { icon: '🔄', color: 'blue', bgColor: 'bg-blue-50 dark:bg-blue-900/20' },
-    custom: { icon: '⚙️', color: 'purple', bgColor: 'bg-purple-50 dark:bg-purple-900/20' },
+    calm: { 
+      icon: '🌿', 
+      bgColor: 'bg-green-50 dark:bg-green-900/20',
+      borderColor: 'border-green-500',
+    },
+    stress: { 
+      icon: '⚠️', 
+      bgColor: 'bg-red-50 dark:bg-red-900/20',
+      borderColor: 'border-red-500',
+    },
+    dynamic: { 
+      icon: '🔄', 
+      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      borderColor: 'border-blue-500',
+    },
+    custom: { 
+      icon: '⚙️', 
+      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+      borderColor: 'border-purple-500',
+    },
   };
 
   return (
@@ -165,7 +181,7 @@ function SimulationControl() {
                     onClick={() => setSelectedScenario(scenario.id)}
                     className={`p-3 rounded-lg border-2 transition-all text-left ${
                       isSelected
-                        ? `border-${config.color}-500 ${config.bgColor}`
+                        ? `${config.borderColor} ${config.bgColor}`
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
                   >

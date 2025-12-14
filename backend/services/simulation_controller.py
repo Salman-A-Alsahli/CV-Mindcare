@@ -362,13 +362,17 @@ class SimulationController:
         elif self.current_scenario == SimulationScenario.DYNAMIC:
             return self._get_dynamic_emotions()
         else:  # CUSTOM
+            # Calculate angry emotion ensuring non-negative value
+            angry = 1.0 - (self.custom_params["emotion_happy"] + 
+                          self.custom_params["emotion_neutral"] + 
+                          self.custom_params["emotion_sad"])
+            angry = max(0.0, angry)  # Prevent negative probabilities
+            
             return {
                 "happy": self.custom_params["emotion_happy"],
                 "neutral": self.custom_params["emotion_neutral"],
                 "sad": self.custom_params["emotion_sad"],
-                "angry": 1.0 - (self.custom_params["emotion_happy"] + 
-                               self.custom_params["emotion_neutral"] + 
-                               self.custom_params["emotion_sad"]),
+                "angry": angry,
                 "surprised": 0.0,
             }
     
