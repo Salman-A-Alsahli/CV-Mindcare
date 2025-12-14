@@ -96,7 +96,7 @@ Total: ~$160-230
    - **Set username and password:** 
      - Username: Your choice (e.g., `admin`, `yourname`) - **NOT "pi"!**
      - Password: Strong password
-     - **⚠️ Note:** Newer Raspberry Pi OS (Bookworm+) requires you to set a custom username during setup. The old default "pi" username is no longer used!
+     - **⚠️ Note:** Raspberry Pi Imager (v1.6+) requires you to set a custom username. The old default "pi" username is no longer used for security reasons!
    - **Configure WiFi:** (optional) Enter your WiFi credentials
    - **Set timezone:** Your local timezone
    - Click "Save"
@@ -178,7 +178,9 @@ sudo reboot
 
 After reboot, SSH back in:
 ```bash
-ssh admin@cvmindcare.local  # Replace 'admin' with YOUR username
+ssh YOUR_USERNAME@cvmindcare.local  # Replace YOUR_USERNAME with what you chose
+# OR
+ssh YOUR_USERNAME@192.168.1.XXX    # Use your Pi's IP address
 ```
 
 ### Step 3: Enable Camera Interface
@@ -1017,8 +1019,8 @@ EOF
 
 **Problem: Permission denied for audio**
 ```bash
-# Add user to audio group (replace 'admin' with YOUR username)
-sudo usermod -a -G audio admin
+# Add user to audio group (replace YOUR_USERNAME with your actual username)
+sudo usermod -a -G audio YOUR_USERNAME
 
 # Logout and login again for changes to take effect
 ```
@@ -1492,17 +1494,18 @@ If you encounter issues:
 ## 📝 Important Notes for Raspberry Pi 5
 
 ### Username Changes
-**⚠️ CRITICAL:** Newer Raspberry Pi OS (Bookworm and later) does NOT use "pi" as the default username!
+**⚠️ CRITICAL:** Raspberry Pi Imager (v1.6+) requires custom username for security!
 
-- **OS Change (not hardware-specific):** This applies to Raspberry Pi OS Bookworm+ on any Raspberry Pi model
-- You choose your username during initial OS setup with Raspberry Pi Imager
+- **Security improvement:** Raspberry Pi Imager no longer allows default "pi" username
+- You choose your username during OS setup with Raspberry Pi Imager
+- This applies to all supported OS versions when using Imager's advanced settings
 - All paths in this guide use "YOUR_USERNAME" as a placeholder
 - **You MUST replace "YOUR_USERNAME" with YOUR actual username** in:
   - Systemd service file paths (`User=`, `WorkingDirectory=`, `Environment=`)
   - Database paths
   - Cron job paths
   - Any scripts or commands
-  - SSH commands (e.g., `ssh admin@...` where `admin` is your chosen username)
+  - SSH commands (e.g., `ssh YOUR_USERNAME@...` where YOUR_USERNAME is your chosen name)
 
 ### Power Requirements
 - Raspberry Pi 5 requires 27W USB-C power supply (5.1V/5A)
