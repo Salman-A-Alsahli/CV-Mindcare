@@ -293,12 +293,13 @@ class AirQualitySensor(BaseSensor):
             # Create I2C bus
             i2c = busio.I2C(board.SCL, board.SDA)
 
-            # Create ADS1115 object
-            self._adc = ADS.ADS1115(i2c)
-
-            # Store I2C channel (from config or default to 0)
+            # Get I2C configuration
             i2c_config = self.config.get("i2c", {})
+            i2c_address = i2c_config.get("address", 0x48)  # Default ADS1115 address
             self._adc_channel = i2c_config.get("channel", 0)
+
+            # Create ADS1115 object with specified address
+            self._adc = ADS.ADS1115(i2c, address=i2c_address)
 
             # Create analog input on specified channel
             if self._adc_channel == 0:
@@ -457,11 +458,18 @@ class AirQualitySensor(BaseSensor):
 
         try:
             # Read from ADS1115
-            # ADS1115 returns 16-bit value (0-26400 for single-ended reads at 4.096V gain)
+            # ADS1115 returns signed 16-bit value (-32768 to +32767)
+            # For single-ended reads with MQ-135, we expect positive values
             # Normalize to 0-1023 range for compatibility with other backends
             adc_value = self._analog_input.value
             
+            # Clamp negative values to 0 (shouldn't happen with single-ended reads)
+            if adc_value < 0:
+                logger.warning(f"ADS1115 returned negative value: {adc_value}, clamping to 0")
+                adc_value = 0
+            
             # Normalize 16-bit value (0-32767) to 10-bit range (0-1023)
+            # Using 32767 as max instead of 65535 since we clamp negatives
             normalized_value = (adc_value / 32767.0) * 1023.0
             
             return float(normalized_value)
@@ -590,11 +598,9 @@ class AirQualitySensor(BaseSensor):
                 logger.info("Serial connection closed")
 
             if self._adc:
-                try:
+                # Close ADC if it has a close method
+                if hasattr(self._adc, 'close') and callable(self._adc.close):
                     self._adc.close()
-                except AttributeError:
-                    # Some ADC objects don't have close() method
-                    pass
                 self._adc = None
                 logger.info("ADC connection closed")
 
