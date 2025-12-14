@@ -7,7 +7,7 @@ air pollutants. The sensor outputs analog values that are converted to
 air quality classifications.
 
 Key Features:
-- MQ-135 sensor integration via serial/GPIO adapter
+- MQ-135 sensor integration via I2C (ADS1115), SPI (MCP3008), or serial adapter
 - PPM (parts per million) calibration and conversion
 - Air quality level classification (Excellent to Hazardous)
 - Mock mode for testing without hardware
@@ -23,9 +23,10 @@ Air Quality Levels:
 
 Hardware Requirements:
 - MQ-135 analog gas sensor
-- Analog-to-digital converter (ADC) for Raspberry Pi
-- Serial communication adapter OR
-- GPIO connection with MCP3008/ADS1115 ADC
+- Analog-to-digital converter (ADC) for Raspberry Pi:
+  - ADS1115 (16-bit I2C ADC) - RECOMMENDED for best accuracy
+  - MCP3008 (10-bit SPI ADC) - Alternative option
+  - Serial communication adapter - USB option
 
 Usage:
     # Basic usage with mock mode
@@ -35,9 +36,10 @@ Usage:
     print(f"Air Quality: {data['air_quality_level']}, PPM: {data['ppm']}")
     sensor.stop()
 
-    # Real hardware usage
+    # Real hardware usage with ADS1115 (I2C)
     sensor = AirQualitySensor(config={
-        'serial_port': '/dev/ttyUSB0',
+        'backend': 'i2c',
+        'i2c': {'channel': 0},
         'calibration_factor': 1.0
     })
     sensor.start()
@@ -73,11 +75,16 @@ class AirQualitySensor(BaseSensor):
     Monitors air quality using MQ-135 gas sensor with automatic
     PPM conversion and air quality classification.
 
+    Supports multiple ADC backends:
+    - I2C (ADS1115) - RECOMMENDED: 16-bit resolution, easy wiring
+    - SPI (MCP3008) - 10-bit resolution, more GPIO pins needed
+    - Serial - USB adapter option
+
     Attributes:
         serial_port: Serial port for sensor communication (e.g., '/dev/ttyUSB0')
         calibration_factor: Calibration multiplier for PPM conversion (default: 1.0)
         sample_count: Number of samples to average (default: 10)
-        backend: Communication backend ('serial', 'gpio', 'mock')
+        backend: Communication backend ('i2c', 'spi', 'serial', 'auto')
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -87,11 +94,12 @@ class AirQualitySensor(BaseSensor):
         Args:
             config: Configuration dictionary with options:
                 - mock_mode (bool): Enable mock/simulation mode
+                - backend (str): 'i2c', 'ads1115', 'spi', 'gpio', 'serial', 'auto'
                 - serial_port (str): Serial port path (e.g., '/dev/ttyUSB0')
-                - gpio_pin (int): GPIO pin number for ADC connection
+                - i2c (dict): I2C config with 'channel' (0-3) and 'address' (default 0x48)
+                - gpio_pin (int): GPIO pin/channel number for ADC connection
                 - calibration_factor (float): Calibration multiplier (default: 1.0)
                 - sample_count (int): Number of samples to average (default: 10)
-                - backend (str): 'serial', 'gpio', or 'mock' (auto-detected)
         """
         super().__init__("MQ-135 Air Quality Sensor", "air_quality", config)
 
@@ -105,6 +113,8 @@ class AirQualitySensor(BaseSensor):
         # Runtime state
         self._serial_connection = None
         self._adc = None
+        self._analog_input = None  # For ADS1115 I2C ADC
+        self._adc_channel = 0  # ADC channel number
         self._last_reading: Optional[float] = None
 
         logger.info(
@@ -116,7 +126,7 @@ class AirQualitySensor(BaseSensor):
         """
         Check if MQ-135 sensor hardware is available.
 
-        Attempts to detect sensor via serial port or GPIO/ADC.
+        Attempts to detect sensor via serial port, GPIO/ADC, or I2C (ADS1115).
 
         Returns:
             bool: True if hardware detected, False otherwise
@@ -135,16 +145,33 @@ class AirQualitySensor(BaseSensor):
             except Exception as e:
                 logger.debug(f"Serial check failed: {e}")
 
-        # Check GPIO backend (Raspberry Pi)
-        if self.backend in ("gpio", "auto"):
+        # Check I2C backend (ADS1115 ADC)
+        if self.backend in ("i2c", "ads1115", "auto"):
             try:
-                # Try to import RPi.GPIO or pigpio
-                pass
+                import board
+                import busio
 
-                logger.info("GPIO hardware detected (Raspberry Pi)")
+                # Try to initialize I2C bus
+                i2c = busio.I2C(board.SCL, board.SDA)
+                i2c.deinit()
+                logger.info("I2C hardware detected (ADS1115 ADC available)")
                 return True
-            except (ImportError, RuntimeError):
-                logger.debug("GPIO not available (not running on Raspberry Pi)")
+            except (ImportError, RuntimeError, ValueError) as e:
+                logger.debug(f"I2C/ADS1115 check failed: {e}")
+
+        # Check GPIO backend (MCP3008 via SPI)
+        if self.backend in ("gpio", "spi", "auto"):
+            try:
+                import spidev
+
+                # Try to open SPI device
+                spi = spidev.SpiDev()
+                spi.open(0, 0)
+                spi.close()
+                logger.info("SPI hardware detected (MCP3008 ADC available)")
+                return True
+            except (ImportError, FileNotFoundError, OSError) as e:
+                logger.debug(f"SPI/GPIO check failed: {e}")
 
         logger.warning("No MQ-135 sensor hardware detected")
         return False
@@ -153,8 +180,8 @@ class AirQualitySensor(BaseSensor):
         """
         Initialize MQ-135 sensor hardware.
 
-        Sets up serial connection or GPIO/ADC interface based on
-        detected hardware and configuration.
+        Sets up serial connection, I2C (ADS1115), or GPIO/ADC (MCP3008) interface
+        based on detected hardware and configuration.
 
         Returns:
             bool: True if initialization successful, False otherwise
@@ -162,11 +189,15 @@ class AirQualitySensor(BaseSensor):
         try:
             # Determine backend if auto-detection
             if self.backend == "auto":
-                if self._initialize_serial():
+                # Try backends in order of preference: I2C, Serial, SPI
+                if self._initialize_ads1115():
+                    self.backend = "i2c"
+                    return True
+                elif self._initialize_serial():
                     self.backend = "serial"
                     return True
                 elif self._initialize_gpio():
-                    self.backend = "gpio"
+                    self.backend = "spi"
                     return True
                 else:
                     logger.error("Failed to initialize any backend")
@@ -175,8 +206,10 @@ class AirQualitySensor(BaseSensor):
             # Initialize specific backend
             if self.backend == "serial":
                 return self._initialize_serial()
-            elif self.backend == "gpio":
+            elif self.backend in ("gpio", "spi"):
                 return self._initialize_gpio()
+            elif self.backend in ("i2c", "ads1115"):
+                return self._initialize_ads1115()
             else:
                 logger.error(f"Unknown backend: {self.backend}")
                 return False
@@ -218,7 +251,7 @@ class AirQualitySensor(BaseSensor):
 
     def _initialize_gpio(self) -> bool:
         """
-        Initialize GPIO/ADC interface for MQ-135 sensor.
+        Initialize GPIO/ADC interface for MQ-135 sensor (MCP3008 via SPI).
 
         Returns:
             bool: True if GPIO/ADC initialized
@@ -239,6 +272,56 @@ class AirQualitySensor(BaseSensor):
             return False
         except Exception as e:
             logger.debug(f"GPIO/ADC initialization failed: {e}")
+            return False
+
+    def _initialize_ads1115(self) -> bool:
+        """
+        Initialize ADS1115 I2C ADC for MQ-135 sensor.
+
+        ADS1115 is a 16-bit I2C ADC commonly used with Raspberry Pi
+        for analog sensors like the MQ-135.
+
+        Returns:
+            bool: True if ADS1115 initialized successfully
+        """
+        try:
+            import board
+            import busio
+            import adafruit_ads1x15.ads1115 as ADS
+            from adafruit_ads1x15.analog_in import AnalogIn
+
+            # Create I2C bus
+            i2c = busio.I2C(board.SCL, board.SDA)
+
+            # Get I2C configuration
+            i2c_config = self.config.get("i2c", {})
+            i2c_address = i2c_config.get("address", 0x48)  # Default ADS1115 address
+            self._adc_channel = i2c_config.get("channel", 0)
+
+            # Create ADS1115 object with specified address
+            self._adc = ADS.ADS1115(i2c, address=i2c_address)
+
+            # Map channel number to ADS1115 pin constant
+            channel_map = {0: ADS.P0, 1: ADS.P1, 2: ADS.P2, 3: ADS.P3}
+            
+            if self._adc_channel not in channel_map:
+                raise ValueError(f"Invalid I2C channel: {self._adc_channel}. Must be 0-3.")
+            
+            # Create analog input on specified channel
+            self._analog_input = AnalogIn(self._adc, channel_map[self._adc_channel])
+
+            # Test read to verify connection
+            test_value = self._analog_input.value
+            logger.info(
+                f"ADS1115 I2C ADC initialized (channel={self._adc_channel}, test_value={test_value})"
+            )
+            return True
+
+        except ImportError as e:
+            logger.debug(f"ADS1115 libraries not installed: {e}")
+            return False
+        except Exception as e:
+            logger.debug(f"ADS1115 initialization failed: {e}")
             return False
 
     def capture(self) -> Dict[str, Any]:
@@ -270,8 +353,10 @@ class AirQualitySensor(BaseSensor):
             for _ in range(self.sample_count):
                 if self.backend == "serial":
                     raw_value = self._read_serial()
-                elif self.backend == "gpio":
+                elif self.backend in ("gpio", "spi"):
                     raw_value = self._read_gpio()
+                elif self.backend in ("i2c", "ads1115"):
+                    raw_value = self._read_i2c()
                 else:
                     raise SensorError(f"Unknown backend: {self.backend}")
 
@@ -357,6 +442,43 @@ class AirQualitySensor(BaseSensor):
         adc = self._adc.xfer2([1, (8 + channel) << 4, 0])
         data = ((adc[1] & 3) << 8) + adc[2]
         return float(data)
+
+    def _read_i2c(self) -> float:
+        """
+        Read raw value from I2C ADC (ADS1115).
+
+        Reads from ADS1115 16-bit ADC and normalizes to 0-1023 range
+        for compatibility with 10-bit ADCs (MCP3008, etc).
+
+        Returns:
+            float: Normalized sensor value (0-1023 range, scaled from 16-bit ADC)
+        """
+        if not self._analog_input:
+            raise SensorError("I2C ADC (ADS1115) not initialized")
+
+        try:
+            # Read from ADS1115
+            # The Adafruit AnalogIn.value property returns a SIGNED 16-bit integer
+            # Range: -32768 to +32767 (differential mode)
+            # For single-ended reads (MQ-135): typically 0 to +32767 (positive only)
+            # Negative values can occur in differential mode or with electrical noise
+            # We normalize to 0-1023 range for compatibility with 10-bit ADCs
+            adc_value = self._analog_input.value
+            
+            # Clamp negative values to 0 (shouldn't happen with single-ended reads)
+            if adc_value < 0:
+                logger.warning(f"ADS1115 returned negative value: {adc_value}, clamping to 0")
+                adc_value = 0
+            
+            # Normalize signed 16-bit value to 10-bit range (0-1023)
+            # ADS1115 signed range: -32768 to +32767
+            # For positive values (sensor readings): 0 to 32767
+            # Normalization formula: (value / 32767) * 1023
+            normalized_value = (adc_value / 32767.0) * 1023.0
+            
+            return float(normalized_value)
+        except Exception as e:
+            raise SensorError(f"I2C/ADS1115 read error: {e}")
 
     def _convert_to_ppm(self, raw_value: float) -> float:
         """
@@ -468,7 +590,7 @@ class AirQualitySensor(BaseSensor):
         """
         Clean up sensor resources.
 
-        Closes serial connection or GPIO/ADC interface.
+        Closes serial connection, I2C, or GPIO/ADC interface.
 
         Returns:
             bool: True if cleanup successful
@@ -480,9 +602,15 @@ class AirQualitySensor(BaseSensor):
                 logger.info("Serial connection closed")
 
             if self._adc:
-                self._adc.close()
+                # Close ADC if it has a close method
+                if hasattr(self._adc, 'close'):
+                    self._adc.close()
                 self._adc = None
                 logger.info("ADC connection closed")
+
+            if self._analog_input:
+                self._analog_input = None
+                logger.info("I2C analog input released")
 
             self._last_reading = None
             return True

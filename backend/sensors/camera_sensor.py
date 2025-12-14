@@ -50,7 +50,16 @@ class CameraSensor(BaseSensor):
         # Configuration
         self.camera_index = self.config.get("camera_index", 0)
         self.backend = self.config.get("backend", "opencv")
-        self.resolution = self.config.get("resolution", (640, 480))
+        
+        # Handle resolution - can be tuple (width, height) or dict with width/height
+        resolution_config = self.config.get("resolution", (640, 480))
+        if isinstance(resolution_config, dict):
+            self.resolution = (
+                resolution_config.get("width", 640),
+                resolution_config.get("height", 480)
+            )
+        else:
+            self.resolution = resolution_config
 
         # HSV parameters for greenery detection
         self.green_hue_range = self.config.get("green_hue_range", (35, 85))
