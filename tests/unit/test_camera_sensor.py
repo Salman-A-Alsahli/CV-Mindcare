@@ -21,7 +21,7 @@ class TestCameraSensorInitialization:
         assert sensor.name == "Camera Sensor"
         assert sensor.sensor_type == "camera"
         assert sensor.camera_index == 0
-        assert sensor.backend == "opencv"
+        assert sensor.backend == "auto"  # Default to auto-detection
         assert sensor.resolution == (640, 480)
 
     def test_init_with_config(self):

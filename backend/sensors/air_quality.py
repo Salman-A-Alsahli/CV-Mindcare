@@ -150,12 +150,38 @@ class AirQualitySensor(BaseSensor):
             try:
                 import board
                 import busio
+                import time
 
-                # Try to initialize I2C bus
+                # Get I2C configuration
+                i2c_config = self.config.get("i2c", {})
+                i2c_address = i2c_config.get("address", 0x48)
+
+                # Try to initialize I2C bus and scan for device
                 i2c = busio.I2C(board.SCL, board.SDA)
-                i2c.deinit()
-                logger.info("I2C hardware detected (ADS1115 ADC available)")
-                return True
+                
+                # Scan for device at configured address with timeout
+                timeout = 1.0  # 1 second timeout
+                start_time = time.time()
+                while not i2c.try_lock():
+                    if time.time() - start_time > timeout:
+                        logger.debug("I2C lock acquisition timeout")
+                        i2c.deinit()
+                        return False
+                    time.sleep(0.01)  # 10ms sleep to reduce CPU usage
+                
+                try:
+                    devices = i2c.scan()
+                    if i2c_address in devices:
+                        logger.info(f"I2C device detected at address 0x{i2c_address:02x}")
+                        return True
+                    else:
+                        logger.debug(f"No I2C device found at 0x{i2c_address:02x}. Detected devices: {[hex(d) for d in devices]}")
+                finally:
+                    try:
+                        i2c.unlock()
+                    except (RuntimeError, ValueError):
+                        pass  # Lock might already be released or in invalid state
+                    i2c.deinit()
             except (ImportError, RuntimeError, ValueError) as e:
                 logger.debug(f"I2C/ADS1115 check failed: {e}")
 
@@ -299,7 +325,15 @@ class AirQualitySensor(BaseSensor):
             self._adc_channel = i2c_config.get("channel", 0)
 
             # Create ADS1115 object with specified address
-            self._adc = ADS.ADS1115(i2c, address=i2c_address)
+            try:
+                self._adc = ADS.ADS1115(i2c, address=i2c_address)
+            except Exception as e:
+                logger.error(
+                    f"Failed to initialize ADS1115 at address 0x{i2c_address:02x}. "
+                    f"Error: {e}. Please verify the I2C address with 'sudo i2cdetect -y 1' "
+                    f"and update config/sensors.yaml air_quality.i2c.address accordingly."
+                )
+                raise
 
             # Map channel number to ADS1115 pin constant
             channel_map = {0: ADS.P0, 1: ADS.P1, 2: ADS.P2, 3: ADS.P3}
@@ -313,7 +347,8 @@ class AirQualitySensor(BaseSensor):
             # Test read to verify connection
             test_value = self._analog_input.value
             logger.info(
-                f"ADS1115 I2C ADC initialized (channel={self._adc_channel}, test_value={test_value})"
+                f"ADS1115 I2C ADC initialized at 0x{i2c_address:02x} "
+                f"(channel={self._adc_channel}, test_value={test_value})"
             )
             return True
 
