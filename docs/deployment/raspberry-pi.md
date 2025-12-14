@@ -146,8 +146,6 @@ Total: ~$160-230
 
 ### Step 2: Update System & Install Dependencies
 
-**⚠️ IMPORTANT:** In all commands below, replace `/home/admin` with `/home/YOUR_USERNAME`
-
 ```bash
 # Update system packages
 sudo apt update && sudo apt upgrade -y
@@ -208,8 +206,6 @@ libcamera-hello --list-cameras
 ## 📦 CV-Mindcare Installation
 
 ### Step 4: Clone Repository and Setup
-
-**⚠️ Replace `/home/admin` with your actual home directory!**
 
 ```bash
 # Navigate to home directory
@@ -449,7 +445,7 @@ Press `Ctrl+C` to stop the server for now.
 sudo nano /etc/systemd/system/cvmindcare.service
 ```
 
-Copy this configuration (***REPLACE `admin` with YOUR username!***):
+Copy this configuration (**Replace all `YOUR_USERNAME` placeholders with your actual username!**):
 
 ```ini
 [Unit]
