@@ -6,6 +6,7 @@ import WellnessScore from './WellnessScore';
 import Charts from './Charts';
 import Recommendations from './Recommendations';
 import PatternInsights from './PatternInsights';
+import SimulationControl from './SimulationControl';
 import { getManagerStatus, getManagerHealth, startManager } from '../services/api';
 
 function Dashboard() {
@@ -52,6 +53,7 @@ function Dashboard() {
   }
 
   const isRunning = managerStatus?.manager?.status === 'running';
+  const isSimulationMode = managerStatus?.manager?.simulation_mode || false;
 
   return (
     <div className="space-y-6">
@@ -59,10 +61,10 @@ function Dashboard() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className={`h-3 w-3 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+            <div className={`h-3 w-3 rounded-full ${isRunning ? (isSimulationMode ? 'bg-yellow-500 animate-pulse' : 'bg-green-500 animate-pulse') : 'bg-gray-400'}`} />
             <span className="text-sm text-gray-600 dark:text-gray-400">
               System Status: <span className="font-medium text-gray-900 dark:text-white">
-                {isRunning ? 'Active' : 'Inactive'}
+                {isRunning ? (isSimulationMode ? 'Simulation' : 'Active') : 'Inactive'}
               </span>
             </span>
             {managerStatus?.manager?.uptime && (
@@ -89,6 +91,9 @@ function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Simulation Control Panel */}
+      <SimulationControl />
 
       {/* Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
