@@ -7,7 +7,7 @@ This guide helps resolve issues where sensors are physically connected but the a
 Run this command to check sensor hardware detection:
 
 ```bash
-cd /home/runner/work/CV-Mindcare/CV-Mindcare
+cd /path/to/CV-Mindcare  # Change to your project directory
 python3 -c "
 from backend.sensors.camera_sensor import CameraSensor
 from backend.sensors.air_quality import AirQualitySensor

@@ -22,11 +22,12 @@ class CameraSensor(BaseSensor):
     """
     Camera sensor for greenery detection using HSV color analysis.
 
-    Supports two backends:
-    - OpenCV (cv2) - for development and general use
-    - picamera2 - for Raspberry Pi native camera (10x faster)
+    Supports two backends with automatic detection:
+    - picamera2 - Raspberry Pi native camera (10x faster, preferred)
+    - OpenCV (cv2) - USB cameras and general use
 
     Features:
+    - Automatic backend selection (tries picamera2 first, then OpenCV)
     - HSV color space analysis for greenery detection
     - Configurable green hue range (default: 35-85°)
     - Automatic mock mode if hardware unavailable
@@ -35,7 +36,7 @@ class CameraSensor(BaseSensor):
 
     Configuration options:
         - camera_index (int): Camera device index (default: 0)
-        - backend (str): 'opencv' or 'picamera2' (default: 'opencv')
+        - backend (str): 'auto' (recommended), 'opencv', or 'picamera2' (default: 'auto')
         - resolution (tuple): Frame resolution (default: (640, 480))
         - mock_mode (bool): Force mock mode (default: False)
         - green_hue_range (tuple): HSV hue range for green (default: (35, 85))

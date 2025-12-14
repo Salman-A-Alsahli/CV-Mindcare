@@ -150,6 +150,7 @@ class AirQualitySensor(BaseSensor):
             try:
                 import board
                 import busio
+                import time
 
                 # Get I2C configuration
                 i2c_config = self.config.get("i2c", {})
@@ -158,9 +159,15 @@ class AirQualitySensor(BaseSensor):
                 # Try to initialize I2C bus and scan for device
                 i2c = busio.I2C(board.SCL, board.SDA)
                 
-                # Scan for device at configured address
+                # Scan for device at configured address with timeout
+                timeout = 1.0  # 1 second timeout
+                start_time = time.time()
                 while not i2c.try_lock():
-                    pass
+                    if time.time() - start_time > timeout:
+                        logger.debug("I2C lock acquisition timeout")
+                        i2c.deinit()
+                        return False
+                    time.sleep(0.001)  # Yield CPU to prevent busy-wait
                 
                 try:
                     devices = i2c.scan()
