@@ -11,7 +11,6 @@ Welcome to the CV-Mindcare documentation hub! This directory contains comprehens
 
 ### User Guide
 - **[Web Dashboard](user-guide/web-dashboard.md)** - Using the React web interface
-- **[Desktop Application](user-guide/desktop-app.md)** - Using the GUI launcher
 - **[Features Overview](user-guide/features.md)** - Complete feature documentation
 
 ### Development

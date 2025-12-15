@@ -1,5 +1,7 @@
 # GitHub Issues for Manuscript Audit Discrepancies
 
+> **Note:** This is a historical audit document. Some issues reference previous implementations (like the desktop GUI) that have since been replaced with a React-based web dashboard.
+
 This document contains detailed GitHub issue templates for all discrepancies identified in the manuscript audit. Each issue is ready to be created in the GitHub repository.
 
 ---

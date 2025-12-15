@@ -15,7 +15,9 @@ authors = [
 keywords = ["wellness", "mental-health", "sensors", "privacy", "monitoring", "air-quality"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Healthcare Industry",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",

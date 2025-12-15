@@ -242,7 +242,6 @@ ws://localhost:8000/ws/live  # NOT http://
 ```bash
 # 1. Stop all running instances
 pkill -f "uvicorn backend.app"
-pkill -f "python launcher"
 
 # 2. Delete and reinitialize database
 rm backend/cv_mindcare.db
@@ -488,14 +487,14 @@ uvicorn backend.app:app --reload
 # Run Frontend
 cd frontend && npm run dev
 
-# Run Launcher
-python launcher/launcher.py
+# Run Backend
+uvicorn backend.app:app --reload
 
 # Format Code
-black backend/ launcher/ tests/
+black backend/ tests/
 
 # Lint Code
-flake8 backend/ launcher/ tests/
+flake8 backend/ tests/
 ```
 
 ---

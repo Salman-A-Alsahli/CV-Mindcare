@@ -267,9 +267,9 @@ numpy            2.2.6
 ### Optimized Stack
 ```
 ┌─────────────────────────────────────────────────┐
-│  User Interface (Optional)                      │
+│  User Interface                                 │
+│  - Web dashboard (React)                        │
 │  - SSH/Web browser access                       │
-│  - Local touchscreen (CustomTkinter)            │
 └─────────────────────────────────────────────────┘
                       ↓
 ┌─────────────────────────────────────────────────┐

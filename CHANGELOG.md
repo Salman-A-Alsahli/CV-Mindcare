@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Removed
+- **Desktop GUI/Launcher References**: Removed all references to deprecated desktop GUI launcher components
+  - Removed launcher directory reference from Dockerfile
+  - Removed CustomTkinter and desktop GUI mentions from documentation
+  - Updated documentation to focus on web dashboard interface
+  - Note: The web dashboard (React-based) is now the primary user interface
+
+---
+
 ## [1.0.0] - 2024-12-13 🎉 PRODUCTION RELEASE
 
 **Major Milestone**: First production-ready release with 100% test coverage, comprehensive documentation, and Docker deployment.
