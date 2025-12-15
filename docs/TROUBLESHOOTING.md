@@ -298,7 +298,71 @@ curl http://localhost:5173
 
 ---
 
-### 9. High Memory Usage
+### 9. Rollup Module Error on ARM64 (Raspberry Pi)
+
+**Symptoms:**
+- Error: `Cannot find module @rollup/rollup-linux-arm64-gnu`
+- Frontend (Vite) fails to start on Raspberry Pi
+- npm install completes but Rollup native module is missing
+- Error mentions "npm has a bug related to optional dependencies"
+
+**Root Cause:**
+This is a known issue with npm's handling of optional dependencies on ARM64 platforms. Rollup (used by Vite) requires platform-specific native modules, and `@rollup/rollup-linux-arm64-gnu` may not be installed correctly during a standard `npm install`.
+
+**Solutions:**
+
+```bash
+# Solution 1: Use the setup script (RECOMMENDED)
+./setup-frontend.sh
+
+# Solution 2: Manual fix
+cd frontend
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps --force
+
+# If still failing, try installing Rollup module explicitly
+npm install @rollup/rollup-linux-arm64-gnu --save-optional --force
+
+# Solution 3: Verify the module is present
+ls -la node_modules/@rollup/rollup-linux-arm64-gnu/
+
+# Solution 4: If using older Node.js, upgrade to Node.js 18+
+node --version  # Should be v18.0.0 or higher
+# Update if needed: https://nodejs.org/
+
+# Solution 5: Try with different npm versions
+npm --version  # Should be 9.0.0 or higher
+npm install -g npm@latest  # Update npm if needed
+
+# Solution 6: Clear npm cache
+npm cache clean --force
+rm -rf ~/.npm
+cd frontend
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps --force
+```
+
+**For Raspberry Pi Users:**
+The updated `setup-frontend.sh` script automatically detects ARM64 architecture and applies the necessary workarounds. Always use this script for the initial setup:
+
+```bash
+# From CV-Mindcare root directory
+./setup-frontend.sh
+```
+
+**Prevention:**
+- Always use Node.js 18 or higher on ARM64 systems
+- Keep npm updated to the latest version
+- Use the provided setup scripts instead of manual `npm install`
+- The `.npmrc` file in the frontend directory contains ARM64-specific configurations
+
+**References:**
+- npm issue: https://github.com/npm/cli/issues/4828
+- Rollup issue: https://github.com/vitejs/vite/issues/6315
+
+---
+
+### 10. High Memory Usage
 
 **Symptoms:**
 - System becomes slow
@@ -335,7 +399,7 @@ gunicorn backend.app:app -w 2 -k uvicorn.workers.UvicornWorker
 
 ---
 
-### 10. Raspberry Pi Specific Issues
+### 11. Raspberry Pi Specific Issues
 
 **Symptoms:**
 - Slow performance
