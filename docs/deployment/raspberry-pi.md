@@ -260,6 +260,71 @@ sounddevice       0.5.3
 numpy            2.2.6
 ```
 
+### Step 6: Frontend Installation (Web Dashboard)
+
+**⚠️ Important for Raspberry Pi / ARM64 Users:**
+
+The frontend uses Vite/Rollup which requires ARM64-specific native modules. Always use the provided setup script to avoid common installation issues.
+
+```bash
+# Make sure you're in the CV-Mindcare directory
+cd ~/CV-Mindcare
+
+# Run the frontend setup script
+# This script automatically detects ARM64 and applies necessary workarounds
+./setup-frontend.sh
+```
+
+**What the script does:**
+1. Detects ARM64 architecture
+2. Cleans up any previous failed installations
+3. Installs dependencies with proper flags for ARM64
+4. Verifies Rollup ARM64 module installation
+5. Applies workarounds for npm optional dependency issues
+
+**Expected output:**
+```
+=========================================
+CV-Mindcare Frontend Setup
+=========================================
+
+✓ Node.js version: v18.20.8
+✓ npm version: 10.8.2
+✓ Architecture: aarch64
+
+🔧 Detected ARM64 architecture - applying workarounds...
+
+🧹 Cleaning previous installation...
+🧹 Removing package-lock.json...
+
+📦 Installing frontend dependencies (ARM64 mode)...
+[... npm installation output ...]
+
+✅ Frontend setup complete!
+```
+
+**If you encounter Rollup module errors:**
+
+See the [Troubleshooting](#troubleshooting) section below for detailed solutions to the common `@rollup/rollup-linux-arm64-gnu` error.
+
+**Manual Installation (if setup script fails):**
+
+```bash
+cd ~/CV-Mindcare/frontend
+
+# Clean previous installation
+rm -rf node_modules package-lock.json
+
+# Install with ARM64-friendly flags
+npm install --legacy-peer-deps --force
+
+# If Rollup module is still missing, install explicitly
+npm install @rollup/rollup-linux-arm64-gnu --save-optional --force
+
+# Verify installation
+ls -la node_modules/@rollup/rollup-linux-arm64-gnu/
+```
+
 ---
 
 ## 📦 Software Architecture for Raspberry Pi 5
@@ -319,7 +384,7 @@ numpy            2.2.6
 
 ## ⚙️ Configuration
 
-### Step 6: Configure Sensors
+### Step 7: Configure Sensors
 
 **⚠️ Update paths to match YOUR username!**
 
@@ -353,7 +418,7 @@ air_quality:
   i2c_address: 0x48
 ```
 
-### Step 7: Test Hardware
+### Step 8: Test Hardware
 
 ```bash
 # Create a quick hardware test
@@ -400,7 +465,7 @@ print("="*50 + "\n")
 EOF
 ```
 
-### Step 8: Start Backend API (Test Run)
+### Step 9: Start Backend API (Test Run)
 
 ```bash
 # Make sure you're in the CV-Mindcare directory
@@ -436,7 +501,7 @@ Press `Ctrl+C` to stop the server for now.
 
 ## 🔄 Auto-Start Service Setup
 
-### Step 9: Create Systemd Service
+### Step 10: Create Systemd Service
 
 **⚠️ CRITICAL: Update ALL paths with YOUR username!**
 
@@ -527,7 +592,7 @@ sudo systemctl disable cvmindcare
 
 ## ⚡ Performance Optimization
 
-### Step 10: Optimize for Raspberry Pi 5
+### Step 11: Optimize for Raspberry Pi 5
 
 **Configure Swap (if you have 4GB RAM)**
 ```bash
@@ -590,7 +655,7 @@ echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governo
 
 ## 🧪 Testing & Verification
 
-### Step 11: Complete System Test
+### Step 12: Complete System Test
 
 **⚠️ Update username in paths!**
 
@@ -1020,6 +1085,80 @@ sudo usermod -a -G audio YOUR_USERNAME
 
 # Logout and login again for changes to take effect
 ```
+
+### Frontend / Dashboard Issues
+
+**Problem: Rollup module error (@rollup/rollup-linux-arm64-gnu)**
+
+This is the most common issue on Raspberry Pi (ARM64) when starting the dashboard.
+
+**Error message:**
+```
+Error: Cannot find module @rollup/rollup-linux-arm64-gnu
+npm has a bug related to optional dependencies
+```
+
+**Root cause:** npm doesn't always install optional platform-specific dependencies correctly on ARM64.
+
+**Solution 1: Use the setup script (RECOMMENDED)**
+```bash
+cd ~/CV-Mindcare
+./setup-frontend.sh
+```
+
+**Solution 2: Manual fix**
+```bash
+cd ~/CV-Mindcare/frontend
+
+# Clean everything
+rm -rf node_modules package-lock.json
+
+# Reinstall with ARM64-friendly flags
+npm install --legacy-peer-deps --force
+
+# Verify Rollup module is installed
+ls -la node_modules/@rollup/rollup-linux-arm64-gnu/
+
+# If still missing, install explicitly
+npm install @rollup/rollup-linux-arm64-gnu --save-optional --force
+```
+
+**Solution 3: Update Node.js and npm**
+```bash
+# Check versions
+node --version  # Should be v18.0.0 or higher
+npm --version   # Should be v9.0.0 or higher
+
+# Update npm if needed
+npm install -g npm@latest
+
+# Then retry installation
+cd ~/CV-Mindcare/frontend
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps --force
+```
+
+**Solution 4: Clear npm cache**
+```bash
+# Clear all npm caches
+npm cache clean --force
+rm -rf ~/.npm
+
+# Retry installation
+cd ~/CV-Mindcare
+./setup-frontend.sh
+```
+
+**Prevention:**
+- Always use the `./setup-frontend.sh` script for initial setup
+- Keep Node.js and npm updated
+- The `.npmrc` file in the frontend directory contains ARM64-specific settings
+- Use `./start-dashboard.sh` which includes ARM64 detection and helpful error messages
+
+**Related documentation:**
+- See [TROUBLESHOOTING.md](../../TROUBLESHOOTING.md#9-rollup-module-error-on-arm64-raspberry-pi) for more details
+- npm issue: https://github.com/npm/cli/issues/4828
+- Vite/Rollup ARM64 compatibility: https://github.com/vitejs/vite/issues/6315
 
 ### Service Issues
 
