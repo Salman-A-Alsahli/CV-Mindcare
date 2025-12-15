@@ -148,9 +148,9 @@ camera:
   resolution:
     width: 640
     height: 480
-  greenery_detection:
-    lower_hsv: [35, 40, 40]  # Lower bound for green
-    upper_hsv: [85, 255, 255] # Upper bound for green
+  green_hue_range: [35, 85]  # Hue range for green detection
+  saturation_min: 40          # Minimum saturation
+  value_min: 40               # Minimum value
     """)
     
     print("\n✓ Programmatic Configuration:")

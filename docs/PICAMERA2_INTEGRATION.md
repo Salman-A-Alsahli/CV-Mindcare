@@ -151,9 +151,9 @@ camera:
   resolution:
     width: 640
     height: 480
-  greenery_detection:
-    lower_hsv: [35, 40, 40]   # Green hue range lower bound
-    upper_hsv: [85, 255, 255] # Green hue range upper bound
+  green_hue_range: [35, 85]  # Hue range for green detection
+  saturation_min: 40          # Minimum saturation
+  value_min: 40               # Minimum value
 ```
 
 ## Installation
@@ -306,8 +306,8 @@ ws.onmessage = (event) => {
 
 - **Picamera2 Manual:** https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
 - **OpenCV Documentation:** https://docs.opencv.org/
-- **CV-Mindcare Docs:** [docs/getting-started/hardware-setup.md](../docs/getting-started/hardware-setup.md)
-- **Example Code:** [examples/picamera2_opencv_demo.py](picamera2_opencv_demo.py)
+- **CV-Mindcare Docs:** [getting-started/hardware-setup.md](getting-started/hardware-setup.md)
+- **Example Code:** [../examples/picamera2_opencv_demo.py](../examples/picamera2_opencv_demo.py)
 
 ## Summary
 
