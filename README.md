@@ -42,6 +42,9 @@ pip install -e .[ml]
 ## ✨ Features
 
 - 🎥 **Greenery Detection** - Camera-based nature presence monitoring
+  - 📷 **Picamera2 Support** - Native Raspberry Pi camera (10x faster than OpenCV)
+  - 🔄 **Auto-detection** - Tries Picamera2 first, falls back to OpenCV
+  - 🎨 **OpenCV Processing** - HSV color analysis for greenery detection
 - 🎤 **Noise Analysis** - Ambient sound level tracking (dB)
 - 🌬️ **Air Quality** - MQ-135 sensor for CO₂, NH₃, benzene, smoke
 - 🧠 **AI Recommendations** - Personalized wellness suggestions
@@ -83,9 +86,11 @@ pip install -e .[ml]
 ### Resources
 - 🔧 [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues & solutions
 - 🍓 [ARM64 Setup Guide](ARM64_SETUP.md) - Raspberry Pi / ARM64 specific instructions
+- 📷 [Picamera2 Integration](docs/PICAMERA2_INTEGRATION.md) - Raspberry Pi camera + OpenCV guide
 - ⚡ [Performance](docs/PERFORMANCE.md) - Optimization guide
 - 🔌 [Integrations](docs/integrations/README.md) - Home Assistant & more
 - 📚 [API Examples](docs/examples/) - Python, JS, cURL samples
+- 🎯 [Examples](examples/) - Demo scripts and code samples
 
 ---
 
