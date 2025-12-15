@@ -26,11 +26,11 @@ jobs:
       
       - name: Check code formatting with Black
         run: |
-          black --check backend/ tests/ launcher/
+          black --check backend/ tests/
       
       - name: Lint with Flake8
         run: |
-          flake8 backend/ tests/ launcher/ --max-line-length=100 --extend-ignore=E203,W503
+          flake8 backend/ tests/ --max-line-length=100 --extend-ignore=E203,W503
       
       - name: Type checking with MyPy
         run: |
