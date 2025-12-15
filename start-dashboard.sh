@@ -58,9 +58,7 @@ fi
 echo "🚀 Starting React frontend..."
 cd "$(dirname "$0")/frontend"
 
-# Set trap to catch errors and provide helpful message
-trap 'handle_error' ERR
-
+# Define error handler function before setting trap
 handle_error() {
     echo ""
     echo "❌ Frontend failed to start!"
@@ -86,6 +84,9 @@ handle_error() {
     fi
     exit 1
 }
+
+# Set trap to catch errors and provide helpful message
+trap 'handle_error' ERR
 
 npm run dev &
 FRONTEND_PID=$!

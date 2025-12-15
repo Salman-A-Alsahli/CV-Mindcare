@@ -50,7 +50,10 @@ if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
     npm install --legacy-peer-deps --force
     
     # Verify Rollup ARM64 module is present
-    if [ ! -f "node_modules/@rollup/rollup-linux-arm64-gnu/rollup.linux-arm64-gnu.node" ] && [ ! -d "node_modules/@rollup/rollup-linux-arm64-gnu" ]; then
+    ROLLUP_ARM64_FILE="node_modules/@rollup/rollup-linux-arm64-gnu/rollup.linux-arm64-gnu.node"
+    ROLLUP_ARM64_DIR="node_modules/@rollup/rollup-linux-arm64-gnu"
+    
+    if [ ! -f "$ROLLUP_ARM64_FILE" ] && [ ! -d "$ROLLUP_ARM64_DIR" ]; then
         echo ""
         echo "⚠️  Warning: Rollup ARM64 module may not be installed correctly."
         echo "🔧 Attempting manual installation..."
