@@ -1,5 +1,7 @@
 # CV-Mindcare Manuscript Audit Report
 
+> **Note:** This is a historical audit report. Some references to previous implementations (like the desktop GUI) may no longer reflect the current state of the project, which now uses a React-based web dashboard as the primary interface.
+
 **Date:** December 13, 2025  
 **Auditor:** GitHub Copilot Workspace  
 **Repository Version:** v0.3.0  

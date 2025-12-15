@@ -14,7 +14,7 @@
 - **Key Deliverables**:
   - BaseSensor abstract class
   - Camera and Microphone sensors
-  - Desktop GUI launcher
+  - React web dashboard
   - SQLite database
   - 50+ unit tests
 
