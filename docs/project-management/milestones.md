@@ -26,7 +26,7 @@ This document tracks all project milestones from foundation through production r
 - [x] #4 - Implement base sensor interface (`BaseSensor`)
 - [x] #5 - Camera sensor: Greenery detection (HSV analysis)
 - [x] #6 - Microphone sensor: Noise level detection (RMS dB)
-- [x] #7 - Desktop GUI launcher with CustomTkinter
+- [x] #7 - Web dashboard with React (replaced desktop GUI)
 - [x] #8 - Basic API endpoints (health, status, sensors)
 - [x] #9 - Mock mode for sensors (testing without hardware)
 - [x] #10 - Write initial test suite (50+ tests)
@@ -35,7 +35,7 @@ This document tracks all project milestones from foundation through production r
 - BaseSensor abstract class with 6 status states
 - Camera sensor with HSV greenery detection
 - Microphone sensor with dB calculation
-- Desktop GUI launcher
+- React web dashboard with real-time updates
 - SQLite database with sensor data tables
 - 50+ unit tests passing
 

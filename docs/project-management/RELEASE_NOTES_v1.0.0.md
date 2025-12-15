@@ -66,8 +66,8 @@ pip install -e .[dev,ml]
 # Start API server
 uvicorn backend.app:app --reload
 
-# Or run the desktop GUI
-python launcher/launcher.py
+# Or start the web dashboard
+./start-dashboard.sh
 ```
 
 ---
@@ -146,12 +146,7 @@ python launcher/launcher.py
 - Vite development server
 - Recharts for visualizations
 - TailwindCSS for styling
-
-### Launcher
-- Desktop GUI with CustomTkinter
-- System tray integration
-- Process management
-- Auto-updates support
+- WebSocket real-time updates
 
 ### Documentation
 - 40+ markdown guides

@@ -517,9 +517,11 @@ SELECT * FROM sensor_data ORDER BY timestamp DESC LIMIT 10;
 ## Resources
 
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [CustomTkinter Docs](https://customtkinter.tomschimansky.com/)
+- [React Documentation](https://react.dev/)
 - [SQLite Documentation](https://www.sqlite.org/docs.html)
 - [Python Testing with pytest](https://docs.pytest.org/)
+- [Vite Documentation](https://vitejs.dev/)
+- [TailwindCSS Documentation](https://tailwindcss.com/docs)
 
 ---
 

@@ -79,7 +79,7 @@ Welcome to CV-Mindcare! This guide will help you install and set up the system o
    
    This will install:
    - FastAPI and Uvicorn (backend server)
-   - CustomTkinter (GUI framework)
+   - React frontend (web dashboard)
    - OpenCV (camera processing)
    - SoundDevice (audio monitoring)
    - psutil (system monitoring)
