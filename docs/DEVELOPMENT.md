@@ -59,10 +59,6 @@ CV-Mindcare/
 │   │   └── styles.css  # Custom styles
 │   └── js/
 │       └── dashboard.js # Dashboard logic
-├── launcher/            # Desktop launcher app
-│   ├── launcher.py     # Main GUI
-│   ├── process_manager.py # Backend lifecycle
-│   └── system_check.py # System validation
 ├── docs/                # Documentation
 │   ├── INSTALLATION.md
 │   ├── API.md
@@ -82,8 +78,6 @@ CV-Mindcare/
 - **backend/app.py**: REST API endpoints
 - **backend/database.py**: Database schema and CRUD operations
 - **backend/sensors/*.py**: Sensor data collection modules
-- **launcher/launcher.py**: Desktop application GUI
-- **launcher/process_manager.py**: Backend process management
 - **frontend/js/dashboard.js**: Web dashboard logic
 
 ## Development Environment
@@ -152,24 +146,16 @@ cd frontend
 python -m http.server 3000
 ```
 
-### Run Launcher
+### Run Backend API
 
 ```powershell
-python -m launcher.launcher
+uvicorn backend.app:app --reload
 ```
 
-Or:
+Or start the complete web dashboard:
 
 ```powershell
-python launcher/launcher.py
-```
-
-### Run Full System
-
-The launcher automatically starts the backend, so just run:
-
-```powershell
-python -m launcher.launcher
+./start-dashboard.sh
 ```
 
 ## Testing
@@ -279,7 +265,7 @@ black --check .
 
 ```powershell
 # Run flake8
-flake8 backend/ launcher/
+flake8 backend/
 
 # With specific rules
 flake8 --max-line-length=100 --ignore=E203,W503 backend/

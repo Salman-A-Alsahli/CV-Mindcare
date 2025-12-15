@@ -61,11 +61,6 @@ pip install -e .[dev,ml]
 # - Dashboard: http://localhost:5173
 ```
 
-**Desktop GUI**
-```bash
-python launcher/main.py
-```
-
 **API Only**
 ```bash
 uvicorn backend.app:app --reload

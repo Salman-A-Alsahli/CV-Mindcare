@@ -56,7 +56,6 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy application code
 COPY backend/ /app/backend/
-COPY launcher/ /app/launcher/
 COPY config/ /app/config/
 
 # Create directory for database

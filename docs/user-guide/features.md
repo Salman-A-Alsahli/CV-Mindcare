@@ -15,7 +15,7 @@ CV-Mindcare is your **personal wellness assistant** that monitors your workspace
 ✅ **Privacy-First:** All processing happens locally - zero cloud dependencies  
 ✅ **Smart Monitoring:** Camera (greenery detection) and microphone (noise analysis)  
 ✅ **AI-Powered Insights:** Personalized recommendations based on your patterns  
-✅ **Easy to Use:** Desktop GUI + REST API + WebSocket streaming  
+✅ **Easy to Use:** Web Dashboard + REST API + WebSocket streaming  
 ✅ **Production Ready:** Tested, documented, and optimized for Raspberry Pi 5  
 
 ---
@@ -44,26 +44,28 @@ pip install -r requirements-base.txt
 
 ### Step 2: Start the Application
 
-**Option A: Desktop GUI (Recommended)**
+**Web Dashboard (Recommended)**
 ```bash
-python -m launcher.launcher
+# Start both backend and frontend
+./setup-frontend.sh && ./start-dashboard.sh
+# Access at http://localhost:5173
 ```
 
-**Option B: Backend Only**
+**Backend API Only**
 ```bash
-cd backend
-python -m uvicorn app:app --host 127.0.0.1 --port 8000 --reload
+uvicorn backend.app:app --reload
+# Access API docs at http://localhost:8000/docs
 ```
 
 ### Step 3: Access the Application
 
-- **Desktop GUI:** Opens automatically
+- **Web Dashboard:** http://localhost:5173
 - **API Documentation:** http://localhost:8000/docs
 - **Health Check:** http://localhost:8000/api/health
 
 ### Step 4: Start Monitoring
 
-1. Click "Start Sensors" in the GUI (or use API)
+1. Click "Start Sensors" in the web dashboard (or use API)
 2. Sensors automatically collect data (works without hardware via mock mode)
 3. View real-time data and recommendations
 

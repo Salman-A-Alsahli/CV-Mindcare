@@ -123,5 +123,4 @@ curl http://localhost:8000/api/health
 ## Next Steps
 
 - [Features Guide](features.md) - All features explained
-- [Desktop App](desktop-app.md) - Alternative GUI
 - [API Reference](../development/api-reference.md) - Direct API access
