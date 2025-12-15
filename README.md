@@ -25,6 +25,8 @@ pip install -e .
 # Open http://localhost:5173
 ```
 
+**🍓 Raspberry Pi / ARM64 Users:** The setup script automatically detects ARM64 architecture and applies necessary workarounds for Rollup/Vite. See [ARM64_SETUP.md](ARM64_SETUP.md) for details.
+
 Alternative methods:
 ```bash
 # API only
@@ -80,6 +82,7 @@ pip install -e .[ml]
 
 ### Resources
 - 🔧 [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues & solutions
+- 🍓 [ARM64 Setup Guide](ARM64_SETUP.md) - Raspberry Pi / ARM64 specific instructions
 - ⚡ [Performance](docs/PERFORMANCE.md) - Optimization guide
 - 🔌 [Integrations](docs/integrations/README.md) - Home Assistant & more
 - 📚 [API Examples](docs/examples/) - Python, JS, cURL samples
