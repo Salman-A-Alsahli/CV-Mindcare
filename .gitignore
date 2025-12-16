@@ -55,3 +55,6 @@ yarn-error.log*
 # OS
 Thumbs.db
 desktop.ini
+
+# Test scripts
+test_simulation_persistence.py
