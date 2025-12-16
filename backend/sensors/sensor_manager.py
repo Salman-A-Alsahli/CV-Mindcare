@@ -100,7 +100,7 @@ class SensorManager:
         # State management
         self.status = ManagerStatus.STOPPED
         self.running = False
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()  # Use reentrant lock to prevent deadlock
         self._polling_thread: Optional[threading.Thread] = None
         self._start_time: Optional[datetime] = None
 
