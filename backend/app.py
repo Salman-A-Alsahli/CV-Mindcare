@@ -1151,6 +1151,17 @@ class SimulationStartRequest(BaseModel):
     scenario: str = "calm"
 
 
+class CustomParametersRequest(BaseModel):
+    """Request model for setting custom simulation parameters."""
+    greenery_min: float = 0
+    greenery_max: float = 100
+    noise_min: float = 0
+    noise_max: float = 100
+    emotion_happy: float = 0.5
+    emotion_neutral: float = 0.3
+    emotion_sad: float = 0.2
+
+
 @app.get("/api/simulation/status")
 async def get_simulation_status() -> Dict[str, object]:
     """
@@ -1265,6 +1276,77 @@ async def stop_simulation() -> Dict[str, object]:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Simulation stop failed: {str(e)}",
+        )
+
+
+@app.post("/api/simulation/custom-params", status_code=status.HTTP_200_OK)
+async def set_custom_parameters(request: CustomParametersRequest) -> Dict[str, object]:
+    """
+    Set custom simulation parameters for custom scenario.
+    
+    Args:
+        request: Contains custom parameter values for greenery, noise, and emotions
+        
+    Returns:
+        Success message and updated parameters
+    """
+    try:
+        manager = get_sensor_manager()
+        
+        # Validate parameters
+        if request.greenery_min < 0 or request.greenery_max > 100 or request.greenery_min >= request.greenery_max:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid greenery range. Must be 0-100 with min < max",
+            )
+        
+        if request.noise_min < 0 or request.noise_max > 100 or request.noise_min >= request.noise_max:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid noise range. Must be 0-100 with min < max",
+            )
+        
+        # Validate emotion probabilities sum to <= 1.0
+        emotion_sum = request.emotion_happy + request.emotion_neutral + request.emotion_sad
+        if emotion_sum > 1.0 or any(p < 0 for p in [request.emotion_happy, request.emotion_neutral, request.emotion_sad]):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid emotion probabilities. Each must be 0-1 and sum must be <= 1.0",
+            )
+        
+        # Set custom parameters
+        success = manager.set_custom_simulation_params({
+            "greenery_range": (request.greenery_min, request.greenery_max),
+            "noise_range": (request.noise_min, request.noise_max),
+            "emotion_happy": request.emotion_happy,
+            "emotion_neutral": request.emotion_neutral,
+            "emotion_sad": request.emotion_sad,
+        })
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to set custom parameters",
+            )
+        
+        return {
+            "message": "Custom parameters updated successfully",
+            "parameters": {
+                "greenery_range": f"{request.greenery_min}-{request.greenery_max}%",
+                "noise_range": f"{request.noise_min}-{request.noise_max} dB",
+                "emotions": {
+                    "happy": request.emotion_happy,
+                    "neutral": request.emotion_neutral,
+                    "sad": request.emotion_sad,
+                },
+            },
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to set custom parameters: {str(e)}",
         )
 
 

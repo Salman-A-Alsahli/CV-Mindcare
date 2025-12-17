@@ -1,16 +1,27 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Play, Square, Zap, AlertTriangle, Activity } from 'lucide-react';
+import { Play, Square, Zap, AlertTriangle, Activity, Settings } from 'lucide-react';
 import {
   getSimulationStatus,
   getSimulationScenarios,
   startSimulation,
   stopSimulation,
+  setCustomParameters,
 } from '../services/api';
 
 function SimulationControl() {
   const queryClient = useQueryClient();
   const [selectedScenario, setSelectedScenario] = useState('calm');
+  const [showCustomParams, setShowCustomParams] = useState(false);
+  const [customParams, setCustomParams] = useState({
+    greenery_min: 0,
+    greenery_max: 100,
+    noise_min: 0,
+    noise_max: 100,
+    emotion_happy: 0.5,
+    emotion_neutral: 0.3,
+    emotion_sad: 0.2,
+  });
 
   // Fetch simulation status
   const { data: simulationStatus, isLoading: statusLoading } = useQuery({
@@ -43,12 +54,34 @@ function SimulationControl() {
     },
   });
 
+  // Set custom parameters mutation
+  const setParamsMutation = useMutation({
+    mutationFn: (params) => setCustomParameters(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['simulationStatus'] });
+    },
+  });
+
   const handleStart = () => {
     startMutation.mutate(selectedScenario);
   };
 
   const handleStop = () => {
     stopMutation.mutate();
+  };
+
+  const handleSaveCustomParams = () => {
+    setParamsMutation.mutate(customParams);
+    setShowCustomParams(false);
+  };
+
+  const handleScenarioSelect = (scenarioId) => {
+    setSelectedScenario(scenarioId);
+    if (scenarioId === 'custom') {
+      setShowCustomParams(true);
+    } else {
+      setShowCustomParams(false);
+    }
   };
 
   if (statusLoading || scenariosLoading) {
@@ -178,7 +211,7 @@ function SimulationControl() {
                 return (
                   <button
                     key={scenario.id}
-                    onClick={() => setSelectedScenario(scenario.id)}
+                    onClick={() => handleScenarioSelect(scenario.id)}
                     className={`p-3 rounded-lg border-2 transition-all text-left ${
                       isSelected
                         ? `${config.borderColor} ${config.bgColor}`
@@ -206,6 +239,124 @@ function SimulationControl() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Custom Parameters Panel */}
+        {!isActive && showCustomParams && selectedScenario === 'custom' && (
+          <div className="space-y-3 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+            <div className="flex items-center space-x-2 mb-3">
+              <Settings className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <h4 className="font-medium text-gray-900 dark:text-white">Custom Parameters</h4>
+            </div>
+            
+            {/* Greenery Range */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Greenery Range (%)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={customParams.greenery_min}
+                  onChange={(e) => setCustomParams({...customParams, greenery_min: parseFloat(e.target.value) || 0})}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Min"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={customParams.greenery_max}
+                  onChange={(e) => setCustomParams({...customParams, greenery_max: parseFloat(e.target.value) || 100})}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Max"
+                />
+              </div>
+            </div>
+
+            {/* Noise Range */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Noise Range (dB)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={customParams.noise_min}
+                  onChange={(e) => setCustomParams({...customParams, noise_min: parseFloat(e.target.value) || 0})}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Min"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={customParams.noise_max}
+                  onChange={(e) => setCustomParams({...customParams, noise_max: parseFloat(e.target.value) || 100})}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Max"
+                />
+              </div>
+            </div>
+
+            {/* Emotion Probabilities */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Emotion Probabilities (0-1, must sum to ≤ 1)
+              </label>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm w-20 text-gray-600 dark:text-gray-400">Happy:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={customParams.emotion_happy}
+                    onChange={(e) => setCustomParams({...customParams, emotion_happy: parseFloat(e.target.value) || 0})}
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm w-20 text-gray-600 dark:text-gray-400">Neutral:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={customParams.emotion_neutral}
+                    onChange={(e) => setCustomParams({...customParams, emotion_neutral: parseFloat(e.target.value) || 0})}
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm w-20 text-gray-600 dark:text-gray-400">Sad:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={customParams.emotion_sad}
+                    onChange={(e) => setCustomParams({...customParams, emotion_sad: parseFloat(e.target.value) || 0})}
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveCustomParams}
+              disabled={setParamsMutation.isPending}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              <span>{setParamsMutation.isPending ? 'Saving...' : 'Save Custom Parameters'}</span>
+            </button>
           </div>
         )}
 

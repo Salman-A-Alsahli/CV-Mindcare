@@ -109,4 +109,9 @@ export const stopSimulation = async () => {
   return response.data;
 };
 
+export const setCustomParameters = async (params) => {
+  const response = await api.post('/api/simulation/custom-params', params);
+  return response.data;
+};
+
 export default api;
