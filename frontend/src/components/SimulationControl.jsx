@@ -84,6 +84,15 @@ function SimulationControl() {
     }
   };
 
+  // Helper function to handle numeric input with NaN validation
+  const updateNumericParam = (field, value, defaultValue) => {
+    const parsed = parseFloat(value);
+    setCustomParams({
+      ...customParams,
+      [field]: isNaN(parsed) ? defaultValue : parsed
+    });
+  };
+
   if (statusLoading || scenariosLoading) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
@@ -261,10 +270,7 @@ function SimulationControl() {
                   min="0"
                   max="100"
                   value={customParams.greenery_min}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    setCustomParams({...customParams, greenery_min: isNaN(val) ? 0 : val});
-                  }}
+                  onChange={(e) => updateNumericParam('greenery_min', e.target.value, 0)}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Min"
                 />
@@ -273,10 +279,7 @@ function SimulationControl() {
                   min="0"
                   max="100"
                   value={customParams.greenery_max}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    setCustomParams({...customParams, greenery_max: isNaN(val) ? 100 : val});
-                  }}
+                  onChange={(e) => updateNumericParam('greenery_max', e.target.value, 100)}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Max"
                 />
@@ -294,10 +297,7 @@ function SimulationControl() {
                   min="0"
                   max="100"
                   value={customParams.noise_min}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    setCustomParams({...customParams, noise_min: isNaN(val) ? 0 : val});
-                  }}
+                  onChange={(e) => updateNumericParam('noise_min', e.target.value, 0)}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Min"
                 />
@@ -306,10 +306,7 @@ function SimulationControl() {
                   min="0"
                   max="100"
                   value={customParams.noise_max}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    setCustomParams({...customParams, noise_max: isNaN(val) ? 100 : val});
-                  }}
+                  onChange={(e) => updateNumericParam('noise_max', e.target.value, 100)}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Max"
                 />
@@ -330,10 +327,7 @@ function SimulationControl() {
                     max="1"
                     step="0.1"
                     value={customParams.emotion_happy}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      setCustomParams({...customParams, emotion_happy: isNaN(val) ? 0 : val});
-                    }}
+                    onChange={(e) => updateNumericParam('emotion_happy', e.target.value, 0)}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
@@ -345,10 +339,7 @@ function SimulationControl() {
                     max="1"
                     step="0.1"
                     value={customParams.emotion_neutral}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      setCustomParams({...customParams, emotion_neutral: isNaN(val) ? 0 : val});
-                    }}
+                    onChange={(e) => updateNumericParam('emotion_neutral', e.target.value, 0)}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
@@ -360,10 +351,7 @@ function SimulationControl() {
                     max="1"
                     step="0.1"
                     value={customParams.emotion_sad}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      setCustomParams({...customParams, emotion_sad: isNaN(val) ? 0 : val});
-                    }}
+                    onChange={(e) => updateNumericParam('emotion_sad', e.target.value, 0)}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>

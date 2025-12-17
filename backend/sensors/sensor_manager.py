@@ -476,7 +476,8 @@ class SensorManager:
                     except Exception as e:
                         logger.error(f"Error persisting simulation data: {e}")
 
-                # Auto-recover failed sensors if enabled
+                # Auto-recover failed sensors if enabled (skip during simulation mode)
+                # During simulation, we don't use real sensors so recovery is unnecessary
                 if self.auto_recover and not self.simulation_mode:
                     self._check_and_recover()
 
