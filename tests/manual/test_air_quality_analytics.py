@@ -148,9 +148,11 @@ def test_level_distribution():
     assert distribution["total_measurements"] > 0, "Should have measurements"
     
     levels = distribution["distribution"]
-    total_percentage = sum(level["percentage"] for level in levels.values())
     
-    assert abs(total_percentage - 100.0) < 1.0, "Percentages should sum to ~100%"
+    # Check if we have any measurements
+    if distribution["total_measurements"] > 0:
+        total_percentage = sum(level.get("percentage", 0) for level in levels.values())
+        assert abs(total_percentage - 100.0) < 1.0, "Percentages should sum to ~100%"
     
     print(f"✓ Level distribution passed")
     print(f"  Total measurements: {distribution['total_measurements']}")

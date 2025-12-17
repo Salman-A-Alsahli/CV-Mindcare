@@ -480,7 +480,17 @@ class Analytics:
                 
                 rows = cursor.fetchall()
                 
+                # Calculate total, handling empty results
                 total = sum(row["count"] for row in rows)
+                if total == 0:
+                    logger.info(f"No air quality data found for {days} days")
+                    return {
+                        "total_measurements": 0,
+                        "distribution": {level: {"count": 0, "percentage": 0.0} for level in ["excellent", "good", "moderate", "poor", "hazardous"]},
+                        "days": days,
+                        "start_time": start_time.isoformat(),
+                        "end_time": end_time.isoformat(),
+                    }
                 
                 distribution = {}
                 for row in rows:

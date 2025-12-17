@@ -5,7 +5,7 @@ Database Optimization Script for CV-Mindcare
 This script applies performance optimizations to the SQLite database:
 - Enables WAL (Write-Ahead Logging) mode for better concurrency
 - Optimizes cache settings
-- Creates necessary indexes
+- Analyzes tables for query optimization
 - Vacuums the database to reclaim space
 
 Usage:
