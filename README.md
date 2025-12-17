@@ -47,12 +47,17 @@ pip install -e .[ml]
   - 🎨 **OpenCV Processing** - HSV color analysis for greenery detection
 - 🎤 **Noise Analysis** - Ambient sound level tracking (dB)
 - 🌬️ **Air Quality** - MQ-135 sensor for CO₂, NH₃, benzene, smoke
+  - 📊 **Comprehensive Statistics** - Historical data aggregation and analysis
+  - 📈 **Trend Detection** - Identify air quality patterns over time
+  - 🔍 **Anomaly Detection** - Detect unusual air quality readings
+  - 📉 **Level Distribution** - Track air quality level percentages
 - 🧠 **AI Recommendations** - Personalized wellness suggestions
 - 📊 **Real-Time Dashboard** - Beautiful React interface
 - 🔒 **Privacy-First** - All processing stays local, zero cloud
 - 🔌 **WebSocket Streaming** - Live sensor data updates
-- 📈 **Advanced Analytics** - Trends, anomalies, correlations
+- 📈 **Advanced Analytics** - Trends, anomalies, correlations for all sensors
 - ⚡ **Simulation Engine** - Realistic scenario-based testing without hardware
+- 🚀 **Performance Optimized** - WAL mode, optimized caching, efficient queries
 
 ---
 
