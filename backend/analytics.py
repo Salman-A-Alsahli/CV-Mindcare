@@ -73,7 +73,7 @@ class Analytics:
         Aggregate sensor data by time period.
 
         Args:
-            data_type: Type of data ('greenery' or 'noise')
+            data_type: Type of data ('greenery', 'noise', or 'air_quality')
             period: Aggregation period (hourly, daily, weekly, monthly)
             start_time: Start of time range (default: 7 days ago)
             end_time: End of time range (default: now)
@@ -127,7 +127,7 @@ class Analytics:
         Calculate comprehensive statistics for sensor data.
 
         Args:
-            data_type: Type of data ('greenery' or 'noise')
+            data_type: Type of data ('greenery', 'noise', or 'air_quality')
             start_time: Start of time range (default: 7 days ago)
             end_time: End of time range (default: now)
 
@@ -183,7 +183,7 @@ class Analytics:
         Detect trends in sensor data over time.
 
         Args:
-            data_type: Type of data ('greenery' or 'noise')
+            data_type: Type of data ('greenery', 'noise', or 'air_quality')
             period: Aggregation period for trend analysis
             days: Number of days to analyze
 
@@ -247,7 +247,7 @@ class Analytics:
         Detect anomalous data points that deviate significantly from normal.
 
         Args:
-            data_type: Type of data ('greenery' or 'noise')
+            data_type: Type of data ('greenery', 'noise', or 'air_quality')
             days: Number of days to analyze
             threshold_stddev: Number of standard deviations for anomaly threshold
 
@@ -354,7 +354,7 @@ class Analytics:
         Get data formatted for chart visualization libraries.
 
         Args:
-            data_type: Type of data ('greenery' or 'noise')
+            data_type: Type of data ('greenery', 'noise', or 'air_quality')
             period: Aggregation period
             days: Number of days to include
 
@@ -392,13 +392,16 @@ class Analytics:
         if data_type == "greenery":
             color = "rgba(75, 192, 192, 0.8)"  # Green
             bg_color = "rgba(75, 192, 192, 0.2)"
+        elif data_type == "air_quality":
+            color = "rgba(54, 162, 235, 0.8)"  # Blue
+            bg_color = "rgba(54, 162, 235, 0.2)"
         else:  # noise
             color = "rgba(255, 99, 132, 0.8)"  # Red
             bg_color = "rgba(255, 99, 132, 0.2)"
 
         datasets = [
             {
-                "label": f"{data_type.capitalize()} Average",
+                "label": f"{data_type.replace('_', ' ').capitalize()} Average",
                 "data": avg_values,
                 "borderColor": color,
                 "backgroundColor": bg_color,
@@ -443,6 +446,74 @@ class Analytics:
             },
         }
 
+    def get_air_quality_level_distribution(
+        self, days: int = 7
+    ) -> Dict[str, Any]:
+        """
+        Get distribution of air quality levels over time period.
+
+        Args:
+            days: Number of days to analyze
+
+        Returns:
+            Dictionary with count and percentage for each air quality level
+        """
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+
+            end_time = datetime.now()
+            start_time = end_time - timedelta(days=days)
+
+            with closing(conn):
+                query = """
+                    SELECT air_quality_level, COUNT(*) as count
+                    FROM air_quality
+                    WHERE datetime(timestamp) >= datetime(?)
+                    AND datetime(timestamp) <= datetime(?)
+                    GROUP BY air_quality_level
+                """
+                
+                cursor = conn.execute(
+                    query, (start_time.isoformat(), end_time.isoformat())
+                )
+                
+                rows = cursor.fetchall()
+                
+                total = sum(row["count"] for row in rows)
+                
+                distribution = {}
+                for row in rows:
+                    level = row["air_quality_level"]
+                    count = row["count"]
+                    distribution[level] = {
+                        "count": count,
+                        "percentage": round((count / total * 100), 2) if total > 0 else 0.0
+                    }
+                
+                # Ensure all levels are present
+                for level in ["excellent", "good", "moderate", "poor", "hazardous"]:
+                    if level not in distribution:
+                        distribution[level] = {"count": 0, "percentage": 0.0}
+                
+                logger.info(f"Air quality distribution calculated for {days} days: {total} measurements")
+                
+                return {
+                    "total_measurements": total,
+                    "distribution": distribution,
+                    "days": days,
+                    "start_time": start_time.isoformat(),
+                    "end_time": end_time.isoformat(),
+                }
+
+        except Exception as e:
+            logger.error(f"Error calculating air quality level distribution: {e}")
+            return {
+                "total_measurements": 0,
+                "distribution": {level: {"count": 0, "percentage": 0.0} for level in ["excellent", "good", "moderate", "poor", "hazardous"]},
+                "days": days,
+            }
+
     # Private helper methods
 
     def _get_raw_data(
@@ -454,20 +525,33 @@ class Analytics:
             conn.row_factory = sqlite3.Row
 
             with closing(conn):
-                # Query sensor_data table
-                query = """
-                    SELECT value, timestamp 
-                    FROM sensor_data 
-                    WHERE sensor_type = ? 
-                    AND datetime(timestamp) >= datetime(?)
-                    AND datetime(timestamp) <= datetime(?)
-                    ORDER BY timestamp
-                    LIMIT 10000
-                """
-
-                cursor = conn.execute(
-                    query, (data_type, start_time.isoformat(), end_time.isoformat())
-                )
+                # For air quality, query air_quality table directly
+                if data_type == "air_quality":
+                    query = """
+                        SELECT ppm as value, timestamp 
+                        FROM air_quality 
+                        WHERE datetime(timestamp) >= datetime(?)
+                        AND datetime(timestamp) <= datetime(?)
+                        ORDER BY timestamp
+                        LIMIT 10000
+                    """
+                    cursor = conn.execute(
+                        query, (start_time.isoformat(), end_time.isoformat())
+                    )
+                else:
+                    # Query sensor_data table for greenery and noise
+                    query = """
+                        SELECT value, timestamp 
+                        FROM sensor_data 
+                        WHERE sensor_type = ? 
+                        AND datetime(timestamp) >= datetime(?)
+                        AND datetime(timestamp) <= datetime(?)
+                        ORDER BY timestamp
+                        LIMIT 10000
+                    """
+                    cursor = conn.execute(
+                        query, (data_type, start_time.isoformat(), end_time.isoformat())
+                    )
 
                 rows = cursor.fetchall()
 

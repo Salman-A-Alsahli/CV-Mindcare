@@ -764,7 +764,7 @@ async def get_aggregated_data(
     Get aggregated sensor data by time period.
 
     Args:
-        data_type: Type of data ('greenery' or 'noise')
+        data_type: Type of data ('greenery', 'noise', or 'air_quality')
         period: Aggregation period ('hourly', 'daily', 'weekly', 'monthly')
         days: Number of days to include (default: 7)
         limit: Maximum number of aggregated points (default: 100)
@@ -772,7 +772,7 @@ async def get_aggregated_data(
     Returns:
         List of aggregated data points with timestamp and statistics
     """
-    valid_types = ["greenery", "noise"]
+    valid_types = ["greenery", "noise", "air_quality"]
     if data_type not in valid_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -823,13 +823,13 @@ async def get_data_statistics(data_type: str, days: int = 7) -> Dict[str, object
     Get comprehensive statistics for sensor data.
 
     Args:
-        data_type: Type of data ('greenery' or 'noise')
+        data_type: Type of data ('greenery', 'noise', or 'air_quality')
         days: Number of days to analyze (default: 7)
 
     Returns:
         Dictionary with statistical metrics (avg, min, max, stddev, median, mode, range)
     """
-    valid_types = ["greenery", "noise"]
+    valid_types = ["greenery", "noise", "air_quality"]
     if data_type not in valid_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -863,14 +863,14 @@ async def get_trend_analysis(
     Detect trends in sensor data over time.
 
     Args:
-        data_type: Type of data ('greenery' or 'noise')
+        data_type: Type of data ('greenery', 'noise', or 'air_quality')
         period: Aggregation period for analysis ('hourly', 'daily', 'weekly')
         days: Number of days to analyze (default: 7)
 
     Returns:
         Trend analysis with direction, slope, confidence, and change percentage
     """
-    valid_types = ["greenery", "noise"]
+    valid_types = ["greenery", "noise", "air_quality"]
     if data_type not in valid_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -908,14 +908,14 @@ async def get_anomaly_detection(
     Detect anomalous data points that deviate significantly from normal.
 
     Args:
-        data_type: Type of data ('greenery' or 'noise')
+        data_type: Type of data ('greenery', 'noise', or 'air_quality')
         days: Number of days to analyze (default: 7)
         threshold: Number of standard deviations for anomaly threshold (default: 2.0)
 
     Returns:
         List of anomalous data points with z-scores and severity
     """
-    valid_types = ["greenery", "noise"]
+    valid_types = ["greenery", "noise", "air_quality"]
     if data_type not in valid_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -962,6 +962,34 @@ async def get_correlation_analysis(days: int = 7) -> Dict[str, object]:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Correlation analysis failed: {str(e)}",
+        )
+
+
+@app.get("/api/analytics/air_quality/distribution")
+async def get_air_quality_distribution(days: int = 7) -> Dict[str, object]:
+    """
+    Get distribution of air quality levels over time period.
+
+    Args:
+        days: Number of days to analyze (default: 7)
+
+    Returns:
+        Distribution of air quality levels with counts and percentages
+    """
+    if days < 1 or days > 365:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Days must be between 1 and 365"
+        )
+    
+    try:
+        analytics = get_analytics()
+        distribution = analytics.get_air_quality_level_distribution(days=days)
+        return distribution
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Air quality distribution calculation failed: {str(e)}",
         )
 
 

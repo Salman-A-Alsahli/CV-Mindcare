@@ -248,6 +248,29 @@ class Database:
         """
         return self._get_sensor_data("noise", since)
 
+    def get_air_quality_data(self, since: Optional[datetime] = None) -> List[tuple]:
+        """Get air quality sensor data since specified time.
+        
+        Args:
+            since: Get data after this datetime (optional)
+            
+        Returns:
+            List of tuples: (timestamp, ppm_value)
+        """
+        with closing(_get_connection()) as conn:
+            if since:
+                since_str = since.strftime("%Y-%m-%d %H:%M:%S")
+                rows = conn.execute(
+                    "SELECT timestamp, ppm FROM air_quality WHERE timestamp >= ? ORDER BY timestamp",
+                    (since_str,)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT timestamp, ppm FROM air_quality ORDER BY timestamp"
+                ).fetchall()
+        
+        return [(row[0], row[1]) for row in rows]
+
 
 # Ensure database exists when module is imported
 init_db()
