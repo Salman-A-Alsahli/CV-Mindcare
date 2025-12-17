@@ -261,7 +261,10 @@ function SimulationControl() {
                   min="0"
                   max="100"
                   value={customParams.greenery_min}
-                  onChange={(e) => setCustomParams({...customParams, greenery_min: parseFloat(e.target.value) || 0})}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setCustomParams({...customParams, greenery_min: isNaN(val) ? 0 : val});
+                  }}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Min"
                 />
@@ -270,7 +273,10 @@ function SimulationControl() {
                   min="0"
                   max="100"
                   value={customParams.greenery_max}
-                  onChange={(e) => setCustomParams({...customParams, greenery_max: parseFloat(e.target.value) || 100})}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setCustomParams({...customParams, greenery_max: isNaN(val) ? 100 : val});
+                  }}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Max"
                 />
@@ -288,7 +294,10 @@ function SimulationControl() {
                   min="0"
                   max="100"
                   value={customParams.noise_min}
-                  onChange={(e) => setCustomParams({...customParams, noise_min: parseFloat(e.target.value) || 0})}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setCustomParams({...customParams, noise_min: isNaN(val) ? 0 : val});
+                  }}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Min"
                 />
@@ -297,7 +306,10 @@ function SimulationControl() {
                   min="0"
                   max="100"
                   value={customParams.noise_max}
-                  onChange={(e) => setCustomParams({...customParams, noise_max: parseFloat(e.target.value) || 100})}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setCustomParams({...customParams, noise_max: isNaN(val) ? 100 : val});
+                  }}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Max"
                 />
@@ -318,7 +330,10 @@ function SimulationControl() {
                     max="1"
                     step="0.1"
                     value={customParams.emotion_happy}
-                    onChange={(e) => setCustomParams({...customParams, emotion_happy: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setCustomParams({...customParams, emotion_happy: isNaN(val) ? 0 : val});
+                    }}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
@@ -330,7 +345,10 @@ function SimulationControl() {
                     max="1"
                     step="0.1"
                     value={customParams.emotion_neutral}
-                    onChange={(e) => setCustomParams({...customParams, emotion_neutral: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setCustomParams({...customParams, emotion_neutral: isNaN(val) ? 0 : val});
+                    }}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
@@ -342,7 +360,10 @@ function SimulationControl() {
                     max="1"
                     step="0.1"
                     value={customParams.emotion_sad}
-                    onChange={(e) => setCustomParams({...customParams, emotion_sad: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setCustomParams({...customParams, emotion_sad: isNaN(val) ? 0 : val});
+                    }}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>

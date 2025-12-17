@@ -1294,16 +1294,16 @@ async def set_custom_parameters(request: CustomParametersRequest) -> Dict[str, o
         manager = get_sensor_manager()
         
         # Validate parameters
-        if request.greenery_min < 0 or request.greenery_max > 100 or request.greenery_min >= request.greenery_max:
+        if request.greenery_min < 0 or request.greenery_max > 100 or request.greenery_min > request.greenery_max:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid greenery range. Must be 0-100 with min < max",
+                detail="Invalid greenery range. Must be 0-100 with min <= max",
             )
         
-        if request.noise_min < 0 or request.noise_max > 100 or request.noise_min >= request.noise_max:
+        if request.noise_min < 0 or request.noise_max > 100 or request.noise_min > request.noise_max:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid noise range. Must be 0-100 with min < max",
+                detail="Invalid noise range. Must be 0-100 with min <= max",
             )
         
         # Validate emotion probabilities sum to <= 1.0
