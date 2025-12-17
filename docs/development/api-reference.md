@@ -910,6 +910,236 @@ app.add_middleware(
 - `avg_db`: REAL NOT NULL
 - `timestamp`: TEXT DEFAULT CURRENT_TIMESTAMP
 
+### air_quality Table
+- `id`: INTEGER PRIMARY KEY
+- `ppm`: REAL NOT NULL
+- `air_quality_level`: TEXT NOT NULL
+- `raw_value`: REAL
+- `timestamp`: TEXT DEFAULT CURRENT_TIMESTAMP
+
+## Analytics Endpoints
+
+### GET `/api/analytics/aggregate/{data_type}`
+
+Get aggregated sensor data by time period.
+
+**Path Parameters:**
+- `data_type`: Type of data (`greenery`, `noise`, or `air_quality`)
+
+**Query Parameters:**
+- `period`: Aggregation period (`hourly`, `daily`, `weekly`, `monthly`) - Default: `hourly`
+- `days`: Number of days to include - Default: `7`
+- `limit`: Maximum number of aggregated points - Default: `100`
+
+**Example Request:**
+```bash
+curl "http://127.0.0.1:8000/api/analytics/aggregate/air_quality?period=daily&days=7"
+```
+
+**Response:**
+```json
+{
+  "data_type": "air_quality",
+  "period": "daily",
+  "days": 7,
+  "count": 7,
+  "data": [
+    {
+      "timestamp": "2025-12-17T00:00:00",
+      "avg": 126.65,
+      "min": 19.75,
+      "max": 287.22,
+      "count": 50,
+      "stddev": 78.4
+    }
+  ]
+}
+```
+
+---
+
+### GET `/api/analytics/statistics/{data_type}`
+
+Get comprehensive statistics for sensor data.
+
+**Path Parameters:**
+- `data_type`: Type of data (`greenery`, `noise`, or `air_quality`)
+
+**Query Parameters:**
+- `days`: Number of days to analyze - Default: `7`
+
+**Example Request:**
+```bash
+curl "http://127.0.0.1:8000/api/analytics/statistics/air_quality?days=7"
+```
+
+**Response:**
+```json
+{
+  "data_type": "air_quality",
+  "days": 7,
+  "statistics": {
+    "count": 50,
+    "avg": 126.65,
+    "min": 19.75,
+    "max": 287.22,
+    "stddev": 78.4,
+    "median": 113.28,
+    "range": 267.47,
+    "mode": 130.9
+  }
+}
+```
+
+---
+
+### GET `/api/analytics/trends/{data_type}`
+
+Detect trends in sensor data over time.
+
+**Path Parameters:**
+- `data_type`: Type of data (`greenery`, `noise`, or `air_quality`)
+
+**Query Parameters:**
+- `period`: Aggregation period (`hourly`, `daily`, `weekly`) - Default: `daily`
+- `days`: Number of days to analyze - Default: `7`
+
+**Example Request:**
+```bash
+curl "http://127.0.0.1:8000/api/analytics/trends/air_quality?period=daily&days=7"
+```
+
+**Response:**
+```json
+{
+  "data_type": "air_quality",
+  "period": "daily",
+  "days": 7,
+  "trends": {
+    "direction": "increasing",
+    "slope": 0.0234,
+    "confidence": 0.85,
+    "start_avg": 100.5,
+    "end_avg": 125.3,
+    "change_percent": 24.7,
+    "message": "Data is increasing by 24.7% with high confidence (85%)"
+  }
+}
+```
+
+---
+
+### GET `/api/analytics/anomalies/{data_type}`
+
+Detect anomalous data points that deviate significantly from normal.
+
+**Path Parameters:**
+- `data_type`: Type of data (`greenery`, `noise`, or `air_quality`)
+
+**Query Parameters:**
+- `days`: Number of days to analyze - Default: `7`
+- `threshold`: Number of standard deviations for anomaly threshold - Default: `2.0`
+
+**Example Request:**
+```bash
+curl "http://127.0.0.1:8000/api/analytics/anomalies/air_quality?days=7&threshold=2.0"
+```
+
+**Response:**
+```json
+{
+  "data_type": "air_quality",
+  "days": 7,
+  "threshold_stddev": 2.0,
+  "count": 1,
+  "anomalies": [
+    {
+      "timestamp": "2025-12-17T13:33:19",
+      "value": 287.22,
+      "z_score": 2.05,
+      "deviation": 160.57,
+      "severity": "medium"
+    }
+  ]
+}
+```
+
+---
+
+### GET `/api/analytics/air_quality/distribution`
+
+Get distribution of air quality levels over time period.
+
+**Query Parameters:**
+- `days`: Number of days to analyze - Default: `7`
+
+**Example Request:**
+```bash
+curl "http://127.0.0.1:8000/api/analytics/air_quality/distribution?days=7"
+```
+
+**Response:**
+```json
+{
+  "total_measurements": 50,
+  "distribution": {
+    "excellent": {
+      "count": 11,
+      "percentage": 22.0
+    },
+    "good": {
+      "count": 11,
+      "percentage": 22.0
+    },
+    "moderate": {
+      "count": 10,
+      "percentage": 20.0
+    },
+    "poor": {
+      "count": 7,
+      "percentage": 14.0
+    },
+    "hazardous": {
+      "count": 11,
+      "percentage": 22.0
+    }
+  },
+  "days": 7,
+  "start_time": "2025-12-10T13:33:29.278687",
+  "end_time": "2025-12-17T13:33:29.278687"
+}
+```
+
+---
+
+### GET `/api/analytics/correlation`
+
+Calculate correlation between greenery and noise levels.
+
+**Query Parameters:**
+- `days`: Number of days to analyze - Default: `7`
+
+**Example Request:**
+```bash
+curl "http://127.0.0.1:8000/api/analytics/correlation?days=7"
+```
+
+**Response:**
+```json
+{
+  "days": 7,
+  "correlation": {
+    "coefficient": -0.456,
+    "strength": "moderate",
+    "direction": "negative",
+    "aligned_points": 45,
+    "message": "There is a moderate negative correlation (-0.456) between greenery and noise levels"
+  }
+}
+```
+
+---
+
 ## Future Enhancements
 
 - [ ] Add authentication (API keys or OAuth2)
