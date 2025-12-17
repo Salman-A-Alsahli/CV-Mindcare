@@ -27,6 +27,14 @@ from .air_quality import AirQualitySensor
 
 logger = logging.getLogger(__name__)
 
+# Import database functions for persisting simulation data
+try:
+    from ..database import insert_sensor_data
+    DATABASE_AVAILABLE = True
+except ImportError:
+    DATABASE_AVAILABLE = False
+    logger.warning("Database functions not available")
+
 # Import simulation controller
 try:
     from ..services.simulation_controller import SimulationController
@@ -449,10 +457,28 @@ class SensorManager:
         while self.running:
             try:
                 # Read from all sensors
-                self.read_all()
+                sensor_data = self.read_all()
+                
+                # Persist simulation data to database
+                if self.simulation_mode and DATABASE_AVAILABLE and sensor_data.get("data"):
+                    try:
+                        data = sensor_data["data"]
+                        
+                        # Save camera/greenery data
+                        if "camera" in data and "greenery_percentage" in data["camera"]:
+                            insert_sensor_data("greenery", data["camera"]["greenery_percentage"])
+                        
+                        # Save microphone/noise data
+                        if "microphone" in data and "db_level" in data["microphone"]:
+                            insert_sensor_data("noise", data["microphone"]["db_level"])
+                        
+                        logger.debug("Simulation data persisted to database")
+                    except Exception as e:
+                        logger.error(f"Error persisting simulation data: {e}")
 
-                # Auto-recover failed sensors if enabled
-                if self.auto_recover:
+                # Auto-recover failed sensors if enabled (skip during simulation mode)
+                # During simulation, we don't use real sensors so recovery is unnecessary
+                if self.auto_recover and not self.simulation_mode:
                     self._check_and_recover()
 
                 # Sleep for polling interval
@@ -617,3 +643,25 @@ class SensorManager:
             return []
         
         return self.simulation_controller.get_available_scenarios()
+    
+    def set_custom_simulation_params(self, params: Dict[str, Any]) -> bool:
+        """
+        Set custom simulation parameters.
+        
+        Args:
+            params: Dictionary of custom parameters
+            
+        Returns:
+            bool: True if parameters were set successfully
+        """
+        if not SIMULATION_AVAILABLE or not self.simulation_controller:
+            logger.error("Simulation controller not available")
+            return False
+        
+        try:
+            self.simulation_controller.set_custom_parameters(params)
+            logger.info(f"Custom simulation parameters updated: {params}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to set custom parameters: {e}")
+            return False
